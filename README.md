@@ -12,7 +12,7 @@ A typescript loader, bundler and compiler, that use **SWC** and **ESBUILD**.
 | Action | What it do |
 |--------------|--|
 | *blank space* | REPL |
-| build `root dir`  `build dir` | Build the project |
+| build `root dir/file`  `build dir/file` | Build the project |
 | bundle `file`  `bundle file` | Bundle a file |
 | watch `file` | Watch for changes **in .ts .mts and .cts files** |
 | run `file` ***or only*** `file` | Run a **.ts**  file|

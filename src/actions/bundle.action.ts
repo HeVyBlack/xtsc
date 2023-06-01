@@ -107,6 +107,7 @@ export async function bundleWithTypeCheck(
     } else if (parse.ext === ".cts") {
       await bundleForCommonProject(src, out);
     }
+    log.info("Bundle has finish");
   }
 }
 
@@ -123,6 +124,7 @@ export async function bundleWithOutTypeCheck(src: string, out: string) {
   } else if (parse.ext === ".cts") {
     await bundleForCommonProject(src, out);
   }
+  log.info("Bundle has finish");
 }
 
 export async function watchBundleWithOutTypeCheck(src: string, out: string) {
@@ -139,12 +141,15 @@ export async function watchBundleWithOutTypeCheck(src: string, out: string) {
       ignored: /node_modules/,
     }
   );
-  log.info("Watching for changes...");
-  watcher.on("ready", () => {
-    watcher.on("all", () => {
-      bundleWithOutTypeCheck(src, out);
+  watcher.on("ready", async () => {
+    watcher.on("all", async () => {
+      log.clear();
+      await bundleWithOutTypeCheck(src, out);
+      log.info("Watching for changes...");
     });
-    bundleWithOutTypeCheck(src, out);
+    log.clear();
+    await bundleWithOutTypeCheck(src, out);
+    log.info("Watching for changes...");
   });
 }
 
@@ -201,7 +206,6 @@ export async function watchBundleWithTypeCheck(
       if (allDiagnostics.length) reportDiagnostics(allDiagnostics);
       else {
         log.success("Program is oK!");
-        log.info("Bundling program...");
 
         const compilerOptions = p.getCompilerOptions();
 

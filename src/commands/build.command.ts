@@ -5,6 +5,7 @@ import {
   buildFileWithOutTypeCheck,
   buildWithOutTypeCheck,
   buildWithTypeCheck,
+  watchBuildFileWithOutTypeCheck,
   watchBuildWithOutTypeCheck,
 } from "../actions/build.action.js";
 
@@ -39,8 +40,9 @@ export default async function (args: string[]) {
 
     if (!stat.isDirectory()) {
       if (stat.isFile()) {
-        await buildFileWithOutTypeCheck(srcDirPath, outDirPath);
-        return;
+        if (args.includes("--watch"))
+          return watchBuildFileWithOutTypeCheck(srcDirPath, outDirPath);
+        return await buildFileWithOutTypeCheck(srcDirPath, outDirPath);
       }
       log.error(`${srcDir} is not a directory!`);
       process.exit(1);

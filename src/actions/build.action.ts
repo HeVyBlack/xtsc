@@ -16,6 +16,7 @@ import fs from "node:fs/promises";
 import ts from "typescript";
 import { pathToFileURL } from "node:url";
 import { watch } from "chokidar";
+import log from "../utils/logger.js";
 
 export async function buildWithTypeCheck(args: string[]) {
   type TsConfig = ts.CompilerOptions & { configFilePath: string };
@@ -42,26 +43,36 @@ export async function buildWithOutTypeCheck(src: string, out: string) {
   const files = await getTsFilesList(src);
 
   const format = await getPackageType(src);
-
+  log.info("Building...");
   files.forEach(async (f) => {
     const parse = path.parse(f);
     if (!parse.base.endsWith(".d.ts")) {
       let transform;
-      if (parse.ext === ".ts") {
-        if (format === "commonjs") {
+      try {
+        if (parse.ext === ".ts") {
+          if (format === "commonjs") {
+            transform = swc.transformFileSync(f, swcrcCommonJs);
+            transform.code = changeTsExtInRequireInCode(transform.code);
+          }
+          if (format === "module") {
+            transform = swc.transformFileSync(f, swcrcModuleJs);
+            transform.code = changeTsExtInImportsInCode(transform.code);
+          }
+        } else if (parse.ext === ".cts") {
           transform = swc.transformFileSync(f, swcrcCommonJs);
           transform.code = changeTsExtInRequireInCode(transform.code);
-        }
-        if (format === "module") {
+        } else if (parse.ext === ".mts") {
           transform = swc.transformFileSync(f, swcrcModuleJs);
           transform.code = changeTsExtInImportsInCode(transform.code);
         }
-      } else if (parse.ext === ".cts") {
-        transform = swc.transformFileSync(f, swcrcCommonJs);
-        transform.code = changeTsExtInRequireInCode(transform.code);
-      } else if (parse.ext === ".mts") {
-        transform = swc.transformFileSync(f, swcrcModuleJs);
-        transform.code = changeTsExtInImportsInCode(transform.code);
+      } catch (e: unknown) {
+        type CError = { message: string };
+        if ("message" in (e as CError))
+          log.error((e as CError).message as string);
+        else {
+          console.error(e);
+          process.exit(1);
+        }
       }
 
       if (transform) {
@@ -73,6 +84,7 @@ export async function buildWithOutTypeCheck(src: string, out: string) {
       }
     }
   });
+  log.info("Build has finish");
 }
 
 export async function watchBuildWithOutTypeCheck(src: string, out: string) {
@@ -88,17 +100,22 @@ export async function watchBuildWithOutTypeCheck(src: string, out: string) {
     }
   );
 
-  watcher.on("ready", () => {
-    watcher.on("all", () => {
-      buildWithOutTypeCheck(src, out);
+  watcher.on("ready", async () => {
+    watcher.on("all", async () => {
+      log.clear();
+      await buildWithOutTypeCheck(src, out);
+      log.info("Watching for changes...");
     });
-    buildWithOutTypeCheck(src, out);
+    log.clear();
+    await buildWithOutTypeCheck(src, out);
+    log.info("Watching for changes...");
   });
 }
 
 export async function buildFileWithOutTypeCheck(src: string, out: string) {
   const format = await getPackageType(pathToFileURL(src).host);
   const parse = path.parse(src);
+  log.info("Building file...");
   if (!parse.base.endsWith(".d.ts")) {
     let transform;
     if (parse.ext === ".ts") {
@@ -124,8 +141,23 @@ export async function buildFileWithOutTypeCheck(src: string, out: string) {
       const parseNewPath = path.parse(newPath);
       await fs.mkdir(parseNewPath.dir, { recursive: true }).catch(() => {});
       saveSwcOutPut(transform, newPath);
+      log.success("File builded");
     }
   }
+}
+
+export function watchBuildFileWithOutTypeCheck(src: string, out: string) {
+  const watcher = watch(src, { ignored: /node_modules/ });
+  watcher.on("ready", async () => {
+    watcher.on("all", async () => {
+      log.clear();
+      await buildFileWithOutTypeCheck(src, out);
+      log.info("Watching for changes...");
+    });
+    log.clear();
+    await buildFileWithOutTypeCheck(src, out);
+    log.info("Watching for changes...");
+  });
 }
 
 function saveSwcOutPut({ code, map }: swc.Output, out: string) {
