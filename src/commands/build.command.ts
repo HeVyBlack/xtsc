@@ -5,6 +5,7 @@ import {
   buildFileWithOutTypeCheck,
   buildWithOutTypeCheck,
   buildWithTypeCheck,
+  watchBuildWithOutTypeCheck,
 } from "../actions/build.action.js";
 
 export default async function (args: string[]) {
@@ -45,7 +46,9 @@ export default async function (args: string[]) {
       process.exit(1);
     }
 
-    buildWithOutTypeCheck(srcDirPath, outDirPath);
+    if (args.includes("--watch")) {
+      watchBuildWithOutTypeCheck(srcDirPath, outDirPath);
+    } else buildWithOutTypeCheck(srcDirPath, outDirPath);
   } else {
     const tsConfigPath = args.includes("--tsconfig")
       ? args[args.indexOf("--tsconfig") + 1]

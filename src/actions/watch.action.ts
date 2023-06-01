@@ -1,6 +1,6 @@
 import ts from "typescript";
 import log from "../utils/logger.js";
-import { readDefaultTsConfig, reportDiagnostic } from "../libs/typescript.js";
+import { readDefaultTsConfig, reportDiagnostics } from "../libs/typescript.js";
 import { PathLike } from "node:fs";
 import path from "node:path";
 import { watch } from "chokidar";
@@ -70,12 +70,10 @@ export function watchProjectWithTypeCheck(
 
     host.afterProgramCreate = (program) => {
       const p = program.getProgram();
-      const semanticDiagnostics = p.getSemanticDiagnostics();
-      const syntacticDiagnostics = p.getSyntacticDiagnostics();
 
-      const allDiagnostics = semanticDiagnostics.concat(syntacticDiagnostics);
+      const allDiagnostics = ts.getPreEmitDiagnostics(p);
 
-      if (allDiagnostics.length) reportDiagnostic(allDiagnostics);
+      if (allDiagnostics.length) reportDiagnostics(allDiagnostics);
       else {
         log.success("Program is oK!");
         log.info("Initializing program...");

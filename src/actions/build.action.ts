@@ -1,5 +1,9 @@
 import path from "node:path";
-import { readDefaultTsConfig, typeCheckAndEmit } from "../libs/typescript.js";
+import {
+  readDefaultTsConfig,
+  typeCheckAndEmit,
+  watchTypeCheckAndEmit,
+} from "../libs/typescript.js";
 import {
   changeTsExtInImportsInCode,
   changeTsExtInRequireInCode,
@@ -11,8 +15,10 @@ import { swcrcCommonJs, swcrcModuleJs } from "../utils/variables.js";
 import fs from "node:fs/promises";
 import ts from "typescript";
 import { pathToFileURL } from "node:url";
+import { watch } from "chokidar";
 
 export async function buildWithTypeCheck(args: string[]) {
+  type TsConfig = ts.CompilerOptions & { configFilePath: string };
   let tsConfig: ts.CompilerOptions & { configFilePath?: string };
   let tsConfigPath;
 
@@ -25,6 +31,9 @@ export async function buildWithTypeCheck(args: string[]) {
   }
 
   tsConfig.configFilePath = String(tsConfigPath);
+
+  if (args.includes("--watch"))
+    return await watchTypeCheckAndEmit(tsConfig as TsConfig);
 
   await typeCheckAndEmit(tsConfig.files as string[], tsConfig);
 }
@@ -63,6 +72,27 @@ export async function buildWithOutTypeCheck(src: string, out: string) {
         saveSwcOutPut(transform, newPath);
       }
     }
+  });
+}
+
+export async function watchBuildWithOutTypeCheck(src: string, out: string) {
+  const watcher = watch(
+    [
+      `${src}/**/*.ts`,
+      `${src}/**/*.mts`,
+      `${src}/**/*.cts`,
+      `${src}/**/*.json`,
+    ],
+    {
+      ignored: /node_modules/,
+    }
+  );
+
+  watcher.on("ready", () => {
+    watcher.on("all", () => {
+      buildWithOutTypeCheck(src, out);
+    });
+    buildWithOutTypeCheck(src, out);
   });
 }
 

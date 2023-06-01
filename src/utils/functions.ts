@@ -122,9 +122,11 @@ export function changeTsExtInRequireInCode(code: string) {
   return newCode;
 }
 
-export async function minifyTsCompOutJsFile(src: string) {
+export async function minifyTsEmitJsFiles(src: string) {
   const code = await fs.readFile(src, { encoding: "utf-8" });
-  const minify = await swc.minify(code);
+  const minify = await swc.minify(code, {
+    ecma: 2022,
+  });
   const mapPath = src + ".map";
   if (await fs.stat(mapPath).catch(() => undefined)) {
     const mapName = path.basename(mapPath);
