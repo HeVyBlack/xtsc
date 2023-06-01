@@ -1,6 +1,6 @@
 {
   "name": "xtsc",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "A Typescript loader",
   "main": "build/index.js",
   "type": "module",
@@ -21,7 +21,7 @@
     "build": "tsc && node fix.cjs.js"
   },
   "dependencies": {
-    "@swc/core": "1.3.60",
+    "@swc/core": "1.3.61",
     "chalk": "5.2.0",
     "chokidar": "3.5.3",
     "esbuild": "0.17.19",
