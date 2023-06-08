@@ -17,12 +17,12 @@ import { watch } from "chokidar";
 import log from "../utils/logger.js";
 import ts from "typescript";
 
-export let swcPluginModule = {
+let swcPluginModule = {
   name: "swcPluginModule",
   setup(build: esbuild.PluginBuild) {
-    build.onLoad({ filter: /\.ts$|\.cts$|\.mts$/ }, async (args) => {
+    build.onLoad({ filter: /\.ts$|\.cts$|\.mts$/ }, (args) => {
       try {
-        const { code } = await swc.transformFile(args.path, swcrcModuleJs);
+        const { code } = swc.transformFileSync(args.path, swcrcModuleJs);
         return {
           contents: code,
           loader: "js",
@@ -37,7 +37,7 @@ export let swcPluginModule = {
   },
 };
 
-export let swcPluginCommon = {
+let swcPluginCommon = {
   name: "swcPluginCommon",
   setup(build: esbuild.PluginBuild) {
     build.onLoad({ filter: /\.ts$|\.cts$|\.mts$/ }, async (args) => {
@@ -58,21 +58,31 @@ export let swcPluginCommon = {
 };
 
 async function bundleForModuleProject(src: string, out: string) {
-  await esbuild.build({
-    ...esbuildConfig,
-    entryPoints: [src],
-    outfile: out,
-    format: "esm",
-  });
+  try {
+    await esbuild.build({
+      ...esbuildConfig,
+      entryPoints: [src],
+      outfile: out,
+      format: "esm",
+      plugins: [swcPluginModule],
+    });
+  } catch (e) {
+    process.exit(1);
+  }
 }
 
 async function bundleForCommonProject(src: string, out: string) {
-  await esbuild.build({
-    ...esbuildConfig,
-    entryPoints: [src],
-    outfile: out,
-    format: "cjs",
-  });
+  try {
+    await esbuild.build({
+      ...esbuildConfig,
+      entryPoints: [src],
+      outfile: out,
+      format: "cjs",
+      plugins: [swcPluginCommon],
+    });
+  } catch (e) {
+    process.exit(1);
+  }
 }
 
 export async function bundleWithTypeCheck(
