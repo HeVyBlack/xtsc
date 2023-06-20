@@ -19,7 +19,7 @@ const swcrc: Options = {
     type: "commonjs",
     ignoreDynamic: true,
     strictMode: false,
-    importInterop: "none",
+    importInterop: "node",
     preserveImportMeta: true,
     strict: false,
   },
@@ -43,7 +43,6 @@ const swcrc: Options = {
 
 Module._extensions[".ts"] = function (module: ModuleType, filename: string) {
   const { code } = swc.transformFileSync(filename, swcrc);
-
   module._compile(code, filename);
 };
 
