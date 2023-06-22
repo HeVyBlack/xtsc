@@ -19,7 +19,7 @@ const swcrc: Options = {
     type: "commonjs",
     ignoreDynamic: true,
     strictMode: false,
-    importInterop: "node",
+    importInterop: "swc",
     preserveImportMeta: true,
     strict: false,
   },
