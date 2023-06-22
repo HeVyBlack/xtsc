@@ -16,7 +16,7 @@ export default async function (src: string, out: string, args: string[]) {
   }
 
   if (!stat.isFile()) {
-    log.error("Source file must be a file!");
+    log.error("Source must be a file!");
     process.exit(1);
   }
 

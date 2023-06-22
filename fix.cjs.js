@@ -1,6 +1,6 @@
 import fs from "fs/promises";
 
-const filePath = "./build/require.cjs";
+const filePath = "./bin/require.cjs";
 
 const code = await fs.readFile(filePath, {
   encoding: "utf-8",

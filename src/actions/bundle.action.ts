@@ -57,7 +57,11 @@ let swcPluginCommon = {
   },
 };
 
-async function bundleForModuleProject(src: string, out: string) {
+async function bundleForModuleProject(
+  src: string,
+  out: string,
+  sourcemap: boolean = process.argv.includes("--sourceMaps")
+) {
   try {
     await esbuild.build({
       ...esbuildConfig,
@@ -65,13 +69,18 @@ async function bundleForModuleProject(src: string, out: string) {
       outfile: out,
       format: "esm",
       plugins: [swcPluginModule],
+      sourcemap,
     });
   } catch (e) {
-    process.exit(1);
+    throw e;
   }
 }
 
-async function bundleForCommonProject(src: string, out: string) {
+async function bundleForCommonProject(
+  src: string,
+  out: string,
+  sourcemap: boolean = process.argv.includes("--sourceMaps")
+) {
   try {
     await esbuild.build({
       ...esbuildConfig,
@@ -79,9 +88,10 @@ async function bundleForCommonProject(src: string, out: string) {
       outfile: out,
       format: "cjs",
       plugins: [swcPluginCommon],
+      sourcemap,
     });
   } catch (e) {
-    process.exit(1);
+    throw e;
   }
 }
 
@@ -107,34 +117,49 @@ export async function bundleWithTypeCheck(
   if (isOk) {
     const format = await getPackageType(pathToFileURL(src).href);
     const parse = path.parse(src);
-
+    const sourceMap =
+      tsConfig.sourceMap || process.argv.includes("--sourceMaps");
     log.info("Bundling program...");
-    if (parse.ext === ".ts") {
-      if (format === "module") await bundleForModuleProject(src, out);
-      if (format === "commonjs") await bundleForCommonProject(src, out);
-    } else if (parse.ext === ".mts") {
-      await bundleForModuleProject(src, out);
-    } else if (parse.ext === ".cts") {
-      await bundleForCommonProject(src, out);
+    try {
+      if (parse.ext === ".ts") {
+        if (format === "module")
+          await bundleForModuleProject(src, out, sourceMap);
+        if (format === "commonjs")
+          await bundleForCommonProject(src, out, sourceMap);
+      } else if (parse.ext === ".mts") {
+        await bundleForModuleProject(src, out, sourceMap);
+      } else if (parse.ext === ".cts") {
+        await bundleForCommonProject(src, out, sourceMap);
+      }
+      log.info("Bundle has finish");
+    } catch (e) {
+      process.exit(1);
     }
-    log.info("Bundle has finish");
   }
 }
 
-export async function bundleWithOutTypeCheck(src: string, out: string) {
+export async function bundleWithOutTypeCheck(
+  src: string,
+  out: string,
+  sourcemap: boolean = process.argv.includes("--sourceMaps")
+) {
   const format = await getPackageType(pathToFileURL(src).href);
   const parse = path.parse(src);
 
   log.info("Bundling program...");
-  if (parse.ext === ".ts") {
-    if (format === "module") await bundleForModuleProject(src, out);
-    if (format === "commonjs") await bundleForCommonProject(src, out);
-  } else if (parse.ext === ".mts") {
-    await bundleForModuleProject(src, out);
-  } else if (parse.ext === ".cts") {
-    await bundleForCommonProject(src, out);
-  }
-  log.info("Bundle has finish");
+  try {
+    if (parse.ext === ".ts") {
+      if (format === "module")
+        await bundleForModuleProject(src, out, sourcemap);
+      if (format === "commonjs")
+        await bundleForCommonProject(src, out, sourcemap);
+    } else if (parse.ext === ".mts") {
+      await bundleForModuleProject(src, out, sourcemap);
+    } else if (parse.ext === ".cts") {
+      await bundleForCommonProject(src, out, sourcemap);
+    }
+    log.info("Bundle has finish");
+  } catch {}
 }
 
 export async function watchBundleWithOutTypeCheck(src: string, out: string) {
@@ -179,6 +204,7 @@ export async function watchBundleWithTypeCheck(
   }
 
   tsConfig.configFilePath = tsConfigPath;
+  const sourceMap = tsConfig.sourceMap || process.argv.includes("--sourceMaps");
 
   try {
     const createProgram = ts.createSemanticDiagnosticsBuilderProgram;
@@ -209,7 +235,7 @@ export async function watchBundleWithTypeCheck(
       return origCreateProgram(rootNames, options, host, oldProgram);
     };
 
-    host.afterProgramCreate = (program) => {
+    host.afterProgramCreate = async (program) => {
       const p = program.getProgram();
       const allDiagnostics = ts.getPreEmitDiagnostics(p);
 
@@ -224,8 +250,7 @@ export async function watchBundleWithTypeCheck(
 
         // Avoid error caused by having allowImportingTsExtensions in true, and noEmit in false
         compilerOptions.noEmit = true;
-
-        bundleWithOutTypeCheck(src, out);
+        bundleWithOutTypeCheck(src, out, sourceMap);
       }
     };
 

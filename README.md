@@ -1,6 +1,6 @@
 #  XTSC
   
-A typescript loader, bundler and compiler, that use **SWC** and **ESBUILD**.
+A **Typescript** loader, bundler and compiler, that use **SWC** and **ESBUILD**.
 
 - To install: `npm i -g xtsc` or `npm i -D xtsc`
 
@@ -9,10 +9,10 @@ A typescript loader, bundler and compiler, that use **SWC** and **ESBUILD**.
   
 **Actions:**
 
-| Action | What it do |
+| Action | What it does |
 |--------------|--|
 | *blank space* | REPL |
-| build `root dir/file`  `build dir/file` | Build the project |
+| build `root dir`  `build dir` | Build the project |
 | bundle `file`  `bundle file` | Bundle a file |
 | watch `file` | Watch for changes **in .ts .mts and .cts files** |
 | run `file` ***or only*** `file` | Run a **.ts**  file|
@@ -20,37 +20,56 @@ A typescript loader, bundler and compiler, that use **SWC** and **ESBUILD**.
 | init | Create a **tsconfig.json** file |
 
 
-**Each action have certain flags:**
+**Each action has certain flags:**
 
 *Build:*
     
- - `--wTs` Will use the **Typescript** compiler, and, will make a **type check**.
- - `--tsconfig [tsconfig]` Only useful when `--wTs` is active. Will search for the provided tsconfig.
- - `--minify` Will minify each *.js* file.
+ - `--wTs` Will use the **Typescript** compiler, so, also, will make a **type check**.
+ - `--tsconfig [tsconfig]` Only useful when `--wTs` is active. Will search and use the provided tsconfig.
+ - `--minify` Will minify each *Javascript* file.
  - `--sourceMaps` Will save the the source map of each file.
+ - `--watch` Watch for changes.
+ - `--noClear` Avoid clearing the console when you are using the --watch flag.
  
- *Notes:* In the case you configure **outDir in tsconfig and use --wTs flag** don't need to provied a root dir or a build dir.
+ *Notes:* In the case you are using the --wTs flag, you only need to especify the **outDir in the tsconfig** (Same logic for **sourceMaps**).
 
 *Bundle:*
     
- - `--wTs` Will  make a **type check**
- - `--tsconfig [tsconfig]` Only useful when `--wTs` is active. Will search for the provided tsconfig.
+ - `--wTs` Will  make a **type check.**
+ - `--tsconfig [tsconfig]` Only useful when `--wTs` is active. Will search and use the provided tsconfig.
  - `--minify` Will minify the *.js* file.
- - `--sourceMaps` Will save the the source map of each file.
+ - `--sourceMaps` Will save the source map of the file.
+ - `--watch` Watch for changes.
+ - `--noClear` Avoid clearing the console when you are using the --watch flag.
 
+*Notes:* In the case you are using the --wTs flag, you don't have to use the --sourceMaps flag, only set to true the **sourceMap option in the tsconfig.**
 
 *Run / Watch:*
     
- - `--wTs` Will  make a before the program initialize **type check**.
- - `--tsconfig [tsconfig]` Only useful when `--wTs` is active. Will search for the provided tsconfig.
- - `--noClear` Avoid clear the console when the program initialize.
+ - `--wTs` Will  make a before the program initializes **type check.**
+ - `--tsconfig [tsconfig]` Only useful when `--wTs` is active. Will search and use the provided tsconfig.
+ - `--noClear` Avoid clearing the console when the program initializes.
+ - `--args= [...args]` Args for your program, this flag, must be the last flag.
+ 
+*Check:*
+
+ - `--watch` Watch for changes.
+ - `--tsconfig [tsconfig]`Will search and use the provided tsconfig.
   
 
 **Notes:**
-My idea, is, in the case you are using **"type": module** in your **package.json**, you import all your **.ts** files with the **.ts** extension, so, you can use **allowImportingTsExtensions** in your **tsconfig.json**.
+My idea, is, in the case you are using **"type": "module"** in your **package.json**, you import all your **Typescript** files with **Ts extensions,** so, you can use **allowImportingTsExtensions** in your **tsconfig.json.**
 
-Following this idea, also, when you build your project, **xtsc will change all the .ts extensions to .js**.
+With this idea, when you build your project, **xtsc will change all the Ts extensions to Js extensions**.
 
-In the case you are usign **commonjs**, will works the same if you put the **.ts** extension. 
+In the case you are using **"type": "commonjs"**, you can also import your **Typescript** files with **Ts extensions** extension, but, is not necessary.
 
-**xtsc** will respect **.mts** and **.cts** extensions!
+**Important:**
+**In the case you are using "type": "module" , xtsc will obligate you to import all your Typescript files with Ts extensions.**
+
+
+**In other case, if you are using "type": "commonjs",  you may not have to worry about this, but, in the case you import your Typescript files with Js extensions, xtsc will obligate you to import your files with Ts extensions.**
+
+**Remember, xtsc will change the .ts | .mts | .cts extensions to .js  | .mjs | .cts extensions on build.**
+
+And, **xtsc** will respect **.mts** and **.cts** extensions!
