@@ -76,7 +76,6 @@ export function replaceTsExtensionsFromRegex(
 
 export async function changeTsExtInImportsInFile(file: string) {
   const code = await fs.readFile(file, { encoding: "utf-8" });
-
   const newCode = code
     // @ts-ignore
     .replace(regexFrom, replaceTsExtensionsFromRegex)

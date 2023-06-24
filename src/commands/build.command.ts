@@ -8,6 +8,9 @@ import {
   watchBuildFileWithOutTypeCheck,
   watchBuildWithOutTypeCheck,
 } from "../actions/build.action.js";
+import { getPackageType } from "../loader.js";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { watchTypeCheckAndEmitFile } from "../libs/typescript.js";
 
 export default async function (args: string[]) {
   if (!args.includes("--wTs")) {
@@ -40,8 +43,9 @@ export default async function (args: string[]) {
 
     if (!stat.isDirectory()) {
       if (stat.isFile()) {
-        if (args.includes("--watch"))
-          return watchBuildFileWithOutTypeCheck(srcDirPath, outDirPath);
+        if (args.includes("--watch")) {
+          return await watchBuildFileWithOutTypeCheck(srcDirPath, outDirPath);
+        }
         return await buildFileWithOutTypeCheck(srcDirPath, outDirPath);
       }
       log.error(`${srcDir} is not a directory!`);

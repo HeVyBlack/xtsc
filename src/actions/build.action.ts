@@ -39,10 +39,13 @@ export async function buildWithTypeCheck(args: string[]) {
   await typeCheckAndEmit(tsConfig.files as string[], tsConfig);
 }
 
-export async function buildWithOutTypeCheck(src: string, out: string) {
+export async function buildWithOutTypeCheck(
+  src: string,
+  out: string,
+  format?: string
+) {
   const files = await getTsFilesList(src);
-
-  const format = await getPackageType(src);
+  if (!format) format = await getPackageType(src);
   log.info("Building...");
   files.forEach(async (f) => {
     const parse = path.parse(f);
@@ -100,20 +103,26 @@ export async function watchBuildWithOutTypeCheck(src: string, out: string) {
     }
   );
 
+  const format = await getPackageType(src);
+
   watcher.on("ready", async () => {
     watcher.on("all", async () => {
       log.clear();
-      await buildWithOutTypeCheck(src, out);
+      await buildWithOutTypeCheck(src, out, format);
       log.info("Watching for changes...");
     });
     log.clear();
-    await buildWithOutTypeCheck(src, out);
+    await buildWithOutTypeCheck(src, out, format);
     log.info("Watching for changes...");
   });
 }
 
-export async function buildFileWithOutTypeCheck(src: string, out: string) {
-  const format = await getPackageType(pathToFileURL(src).host);
+export async function buildFileWithOutTypeCheck(
+  src: string,
+  out: string,
+  format?: string
+) {
+  if (!format) format = await getPackageType(pathToFileURL(src).host);
   const parse = path.parse(src);
   log.info("Building file...");
   if (!parse.base.endsWith(".d.ts")) {
@@ -146,24 +155,26 @@ export async function buildFileWithOutTypeCheck(src: string, out: string) {
   }
 }
 
-export function watchBuildFileWithOutTypeCheck(src: string, out: string) {
+export async function watchBuildFileWithOutTypeCheck(src: string, out: string) {
+  const format = await getPackageType(pathToFileURL(src).host);
+
   const watcher = watch(src, { ignored: /node_modules/ });
   watcher.on("ready", async () => {
     watcher.on("all", async () => {
       log.clear();
-      await buildFileWithOutTypeCheck(src, out);
+      await buildFileWithOutTypeCheck(src, out, format);
       log.info("Watching for changes...");
     });
     log.clear();
-    await buildFileWithOutTypeCheck(src, out);
+    await buildFileWithOutTypeCheck(src, out, format);
     log.info("Watching for changes...");
   });
 }
 
 function saveSwcOutPut({ code, map }: swc.Output, out: string) {
   if (out.endsWith(".ts")) out = out.replace(/\.ts$/, ".js");
-  if (out.endsWith(".mts")) out = out.replace(/\.mts$/, ".cjs");
-  if (out.endsWith(".cts")) out = out.replace(/\.cts$/, ".mjs");
+  if (out.endsWith(".mts")) out = out.replace(/\.mts$/, ".mjs");
+  if (out.endsWith(".cts")) out = out.replace(/\.cts$/, ".cjs");
 
   if (map) {
     const mapPath = out + ".map";
