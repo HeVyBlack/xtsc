@@ -1,6 +1,6 @@
 {
   "name": "xtsc",
-  "version": "1.1.7",
+  "version": "1.1.8",
   "description": "A Typescript loader",
   "main": "build/index.js",
   "type": "module",

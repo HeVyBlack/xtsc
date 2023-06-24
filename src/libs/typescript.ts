@@ -184,61 +184,6 @@ export async function watchTypeCheckAndEmit(
   }
 }
 
-export async function watchTypeCheckAndEmitFile(
-  src: string,
-  tsConfig: ts.CompilerOptions & {
-    configFilePath: string;
-  }
-) {
-  try {
-    const createProgram = ts.createSemanticDiagnosticsBuilderProgram;
-
-    const host = ts.createWatchCompilerHost(
-      tsConfig.configFilePath,
-      {},
-      ts.sys,
-      createProgram,
-      undefined,
-      function () {},
-      {},
-      [
-        {
-          extension: ".cts",
-          isMixedContent: false,
-        },
-        {
-          extension: ".mts",
-          isMixedContent: false,
-        },
-      ]
-    );
-
-    const origCreateProgram = host.createProgram;
-    host.createProgram = (rootNames, options, host, oldProgram) => {
-      log.clear();
-      return origCreateProgram(rootNames, options, host, oldProgram);
-    };
-
-    host.afterProgramCreate = (program) => {
-      const p = program.getProgram();
-      const allDiagnostics = ts.getPreEmitDiagnostics(p);
-
-      if (allDiagnostics.length) reportDiagnostics(allDiagnostics);
-      else {
-        log.success("Program is oK!");
-        log.info("Compiling file...");
-
-        handlePostTsFileCompile(src, p);
-      }
-    };
-
-    ts.createWatchProgram(host);
-  } catch (e) {
-    console.error(e);
-    process.exit(1);
-  }
-}
-
 export async function handlePostTsFileCompile(
   src: string,
   program: Pick<ts.Program, "getCompilerOptions">

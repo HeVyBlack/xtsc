@@ -8,9 +8,6 @@ import {
   watchBuildFileWithOutTypeCheck,
   watchBuildWithOutTypeCheck,
 } from "../actions/build.action.js";
-import { getPackageType } from "../loader.js";
-import { fileURLToPath, pathToFileURL } from "node:url";
-import { watchTypeCheckAndEmitFile } from "../libs/typescript.js";
 
 export default async function (args: string[]) {
   if (!args.includes("--wTs")) {

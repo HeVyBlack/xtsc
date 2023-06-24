@@ -12,13 +12,12 @@ A **Typescript** loader, bundler and compiler, that use **SWC** and **ESBUILD**.
 | Action | What it does |
 |--------------|--|
 | *blank space* | REPL |
-| build `root dir`  `build dir` | Build the project |
+| build `root dir`  `build dir` *or* `file` `out file`| Build the project/file |
 | bundle `file`  `bundle file` | Bundle a file |
 | watch `file` | Watch for changes **in .ts .mts and .cts files** |
 | run `file` ***or only*** `file` | Run a **.ts**  file|
 | check | Type check the whole project |
 | init | Create a **tsconfig.json** file |
-
 
 **Each action has certain flags:**
 
@@ -31,7 +30,10 @@ A **Typescript** loader, bundler and compiler, that use **SWC** and **ESBUILD**.
  - `--watch` Watch for changes.
  - `--noClear` Avoid clearing the console when you are using the --watch flag.
  
- *Notes:* In the case you are using the --wTs flag, you only need to especify the **outDir in the tsconfig** (Same logic for **sourceMaps**).
+ *Notes:* 
+ In the case you are using the --wTs flag, you only need to especify the **outDir in the tsconfig** (Same logic for **sourceMaps**).
+For now, you can't combine --watch and --wTs with *build file*, in the future, this will be possible.
+ 
 
 *Bundle:*
     
