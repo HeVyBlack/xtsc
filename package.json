@@ -8,7 +8,8 @@
   "keywords": [
     "typescript",
     "swc",
-    "esbuild"
+    "esbuild",
+    "cli"
   ],
   "author": "Daniel Jge <danielg2964@gmail.com>",
   "license": "MIT",
