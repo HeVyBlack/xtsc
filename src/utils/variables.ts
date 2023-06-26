@@ -33,6 +33,7 @@ export const swcrcCommonJs: Options = {
     importInterop: "swc",
     preserveImportMeta: true,
     strict: true,
+    allowTopLevelThis: true,
   },
   jsc: {
     transform: {
@@ -43,6 +44,9 @@ export const swcrcCommonJs: Options = {
     keepClassNames: true,
     preserveAllComments: true,
     target: "esnext",
+    experimental: {
+      keepImportAssertions: true,
+    },
     parser: {
       syntax: "typescript",
       decorators: true,
@@ -62,6 +66,7 @@ export const swcrcModuleJs: Options = {
     importInterop: "swc",
     preserveImportMeta: true,
     strict: true,
+    allowTopLevelThis: true,
   },
   jsc: {
     transform: {
@@ -72,6 +77,9 @@ export const swcrcModuleJs: Options = {
     keepClassNames: true,
     preserveAllComments: true,
     target: "esnext",
+    experimental: {
+      keepImportAssertions: true,
+    },
     parser: {
       syntax: "typescript",
       decorators: true,

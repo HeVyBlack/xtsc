@@ -22,12 +22,16 @@ const swcrc: Options = {
     importInterop: "swc",
     preserveImportMeta: true,
     strict: false,
+    allowTopLevelThis: true,
   },
   jsc: {
     transform: {
       useDefineForClassFields: false,
       decoratorMetadata: true,
       legacyDecorator: true,
+    },
+    experimental: {
+      keepImportAssertions: true,
     },
     keepClassNames: true,
     preserveAllComments: true,

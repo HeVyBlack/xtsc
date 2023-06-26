@@ -72,6 +72,6 @@ In the case you are using **"type": "commonjs"**, you can also import your **Typ
 
 **In other case, if you are using "type": "commonjs",  you may not have to worry about this, but, in the case you import your Typescript files with Js extensions, xtsc will obligate you to import your files with Ts extensions.**
 
-**Remember, xtsc will change the .ts | .mts | .cts extensions to .js  | .mjs | .cts extensions on build.**
+**Remember, xtsc will change the .ts | .mts | .cts extensions to .js  | .mjs | .cjs extensions on build.**
 
 And, **xtsc** will respect **.mts** and **.cts** extensions!

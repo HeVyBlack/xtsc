@@ -41,14 +41,10 @@ export async function load(url, context, nextLoad) {
       };
     }
 
-    const transformedSource = swc.transformFileSync(fileURLToPath(url), {
-      ...swcrcModuleJs,
-      module: {
-        type: "nodenext",
-      },
-      isModule: true,
-    });
-
+    const transformedSource = swc.transformFileSync(
+      fileURLToPath(url),
+      swcrcModuleJs
+    );
     return {
       format,
       shortCircuit: true,
