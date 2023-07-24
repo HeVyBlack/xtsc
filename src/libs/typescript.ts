@@ -1,7 +1,7 @@
 import ts from "typescript";
 import log from "../utils/logger.js";
 import path from "node:path";
-import * as fs from "node:fs/promises";
+
 import {
   changeTsExtInImportsInFile,
   changeTsExtInRequireInfile,
@@ -14,7 +14,31 @@ export function reportDiagnostic(diagnostic: Readonly<ts.Diagnostic>) {
   reportDiagnostics([diagnostic]);
 }
 
-export function reportDiagnostics(diagnostics: ReadonlyArray<ts.Diagnostic>) {
+export function reportDiagnostics(
+  diagnostics: ReadonlyArray<ts.Diagnostic>,
+  cwd: string = process.cwd()
+) {
+  const diagnosticLength = diagnostics.length;
+
+  if (!diagnosticLength) return;
+
+  if (diagnosticLength === 1) log.error(`Found 1 error.`);
+  else log.error(`Found ${diagnostics.length} errors:`);
+
+  console.error(
+    ts.formatDiagnosticsWithColorAndContext(diagnostics, {
+      getCurrentDirectory: () => cwd,
+      getCanonicalFileName: ts.sys.useCaseSensitiveFileNames
+        ? (filename) => filename
+        : (filename) => filename.toLowerCase(),
+      getNewLine: () => ts.sys.newLine,
+    })
+  );
+}
+
+export function xwtscReportDiagnostics(
+  diagnostics: ReadonlyArray<ts.Diagnostic>
+) {
   const diagnosticLength = diagnostics.length;
 
   if (!diagnosticLength) return;
@@ -35,7 +59,7 @@ export function reportDiagnostics(diagnostics: ReadonlyArray<ts.Diagnostic>) {
 
 export function readDefaultTsConfig(
   tsConfigPath = path.join(process.cwd(), "tsconfig.json")
-) {
+): ts.CompilerOptions {
   let compilerOptions: Partial<
     ts.CompilerOptions & { fallbackToTs: (path: string) => boolean }
   > = {
@@ -52,7 +76,7 @@ export function readDefaultTsConfig(
 
   const fullTsConfigPath = path.resolve(tsConfigPath);
 
-  if (!fs.stat(fullTsConfigPath).catch(() => undefined)) {
+  if (!ts.sys.fileExists(fullTsConfigPath)) {
     return compilerOptions;
   }
 
@@ -67,7 +91,8 @@ export function readDefaultTsConfig(
 
     if (!errors.length) {
       compilerOptions = options;
-      compilerOptions.files = fileNames;
+      compilerOptions.fileNames = fileNames;
+      compilerOptions.configFilePath = fullTsConfigPath;
     } else {
       console.info(
         log.error(

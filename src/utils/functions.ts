@@ -2,6 +2,8 @@ import { ChildProcess } from "child_process";
 import fs from "fs/promises";
 import path from "node:path";
 import swc from "@swc/core";
+import ts from "typescript";
+import log from "./logger.js";
 
 export function handleOnExitMainProcess(child: ChildProcess) {
   ["SIGTERM", "SIGINT"].forEach((signal) => {
@@ -11,6 +13,86 @@ export function handleOnExitMainProcess(child: ChildProcess) {
     });
   });
 }
+
+export function respectDynamicImport(code: string) {
+  const regex = /((?:(require\()["'](\.{1,2}\/){1,}.*\.mts))/g;
+  code = code.replace(regex, (match) => {
+    return match.replace(/^require/, "import");
+  });
+  return code;
+}
+
+export function changeTsExtInText(text: string) {
+  const regex =
+    /((?:((import|require)(\s|\()|(from\s))["'](\.{1,2}\/){1,}.*\.(c|m)?)(?:ts))/g;
+  const new_text = text.replace(regex, (match) => {
+    return match.replace(/ts$/, "js");
+  });
+  return new_text;
+}
+
+export const handleTscEmitFile = (options: ts.CompilerOptions) =>
+  function (
+    fileName: string,
+    text: string,
+    writeByteOrderMark: boolean,
+    _?: (message: string) => void,
+    sourceFiles?: readonly ts.SourceFile[]
+  ) {
+    const avoidDTsRegex = /\.d\.(c|m)?js$/;
+
+    const ext = avoidDTsRegex.test(fileName) ? "" : path.extname(fileName);
+
+    switch (ext) {
+      case ".mjs": {
+        if (!sourceFiles) return;
+        if (!sourceFiles[0]) return;
+
+        const code = sourceFiles[0].getSourceFile().text;
+
+        let { outputText: new_text } = ts.transpileModule(code, {
+          compilerOptions: {
+            ...options,
+            module: ts.ModuleKind.ESNext,
+            target: ts.ScriptTarget.ESNext,
+          },
+        });
+        new_text = changeTsExtInText(new_text);
+
+        ts.sys.writeFile(fileName, new_text, writeByteOrderMark);
+        break;
+      }
+      case ".cjs": {
+        if (!sourceFiles) return;
+        if (!sourceFiles[0]) return;
+
+        const code = sourceFiles[0].getSourceFile().text;
+
+        let { outputText: new_text } = ts.transpileModule(code, {
+          compilerOptions: {
+            ...options,
+            module: ts.ModuleKind.CommonJS,
+            target: ts.ScriptTarget.ES2017,
+          },
+        });
+
+        new_text = changeTsExtInText(new_text);
+
+        ts.sys.writeFile(fileName, new_text, writeByteOrderMark);
+        break;
+      }
+      case ".js": {
+        let new_text = respectDynamicImport(text);
+        new_text = changeTsExtInText(new_text);
+
+        ts.sys.writeFile(fileName, new_text, writeByteOrderMark);
+        break;
+      }
+      default:
+        ts.sys.writeFile(fileName, text, writeByteOrderMark);
+        break;
+    }
+  };
 
 export async function getTsFilesList(dir: string) {
   const extensionsRegex = /\.ts$|\.cts$|\.mts$/;
@@ -132,4 +214,55 @@ export async function minifyTsEmitJsFiles(src: string) {
     minify.code += `\n//# sourceMappingURL=${mapName}\n`;
   }
   await fs.writeFile(src, minify.code);
+}
+
+export function handleFileInArv(
+  argv: string[],
+  cwd: string
+): {
+  file: string;
+  argvs: string[];
+  optionsPath: string;
+} {
+  let fileName: string;
+  const file = argv[0]!;
+  if (!path.isAbsolute(file)) {
+    fileName = path.join(cwd, file);
+  } else fileName = file;
+
+  const found = ts.sys.fileExists(fileName);
+
+  if (!found) {
+    log.error("File doesn't exist!");
+    process.exit(1);
+  }
+
+  const re: { file: string; argvs: string[]; optionsPath: string } = {
+    file: fileName,
+    argvs: [],
+    optionsPath: "tsconfig.json",
+  };
+
+  if (argv.includes("--args:")) {
+    const index = argv.indexOf("--args:") + 1;
+    const fileArgs = argv.slice(index);
+    re.argvs = fileArgs;
+
+    argv.splice(index - 1);
+  }
+
+  let optionsPath: string = "tsconfig.json";
+
+  if (argv.includes("--tsconfig")) {
+    optionsPath = argv[argv.indexOf("--tsconfig") + 1]!;
+    if (!optionsPath) {
+      log.error("Provied a valid tsconfig!");
+      process.exit(1);
+    }
+    optionsPath = path.resolve(optionsPath);
+  }
+
+  re.optionsPath = optionsPath;
+
+  return re;
 }

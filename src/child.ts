@@ -4,7 +4,7 @@ import { loaderPath, requirePath } from "./utils/variables.js";
 export default function (file: string, fileArgs?: string[]) {
   let args = [];
 
-  if (file) args.push(file.toString());
+  if (file) args.push(file);
 
   if (fileArgs) args = args.concat(fileArgs);
 

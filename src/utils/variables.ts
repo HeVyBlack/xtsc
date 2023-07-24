@@ -18,6 +18,11 @@ export const sourceDir = path.join(path.parse(import.meta.url).dir, "..");
 
 export const platform = os.platform();
 
+export const tscHooksPath =
+  platform === "win32"
+    ? path.join(sourceDir, "xwtsc", "hooks.mjs")
+    : path.join(fileURLToPath(sourceDir), "xwtsc", "hooks.mjs");
+
 export const loaderPath =
   platform === "win32"
     ? path.join(sourceDir, "loader.js")
