@@ -8,7 +8,7 @@ export default function (cwd: string) {
 
   const exists = ts.sys.fileExists(tsConfigPath);
 
-  if (exists) {
+  if (!exists) {
     log.info("Creating a tsconfig.json file...");
     const tsConfig = tsConfigBasic;
 

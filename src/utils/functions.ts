@@ -1,7 +1,7 @@
-import { ChildProcess } from "child_process";
-import fs from "fs/promises";
-import path from "node:path";
 import swc from "@swc/core";
+import { ChildProcess } from "child_process";
+import fs from "fs";
+import path from "node:path";
 import ts from "typescript";
 import log from "./logger.js";
 
@@ -37,7 +37,7 @@ export const handleTscEmitFile = (options: ts.CompilerOptions) =>
     text: string,
     writeByteOrderMark: boolean,
     _?: (message: string) => void,
-    sourceFiles?: readonly ts.SourceFile[]
+    sourceFiles?: readonly ts.SourceFile[],
   ) {
     const avoidDTsRegex = /\.d\.(c|m)?js$/;
 
@@ -94,17 +94,18 @@ export const handleTscEmitFile = (options: ts.CompilerOptions) =>
     }
   };
 
-export async function getTsFilesList(dir: string) {
+export function getTsFilesList(dir: string) {
   const extensionsRegex = /\.ts$|\.cts$|\.mts$/;
   let files: string[] = [];
-  const items = await fs.readdir(dir, { withFileTypes: true });
+  const items = fs.readdirSync(dir, { withFileTypes: true });
   for (const item of items) {
     if (item.isDirectory() && item.name !== "node_modules") {
-      const res = await getTsFilesList(path.join(dir, item.name));
+      const res = getTsFilesList(path.join(dir, item.name));
       res.forEach((f) => files.push(f));
     } else {
-      if (extensionsRegex.test(path.extname(item.name)))
+      if (extensionsRegex.test(path.extname(item.name))) {
         files.push(path.join(dir, item.name));
+      }
     }
   }
   return files;
@@ -113,14 +114,15 @@ export async function getTsFilesList(dir: string) {
 export async function getJsFilesList(dir: string) {
   const extensionsRegex = /\.js$|\.cjs$|\.mjs$/;
   let files: string[] = [];
-  const items = await fs.readdir(dir, { withFileTypes: true });
+  const items = fs.readdirSync(dir, { withFileTypes: true });
   for (const item of items) {
     if (item.isDirectory() && item.name !== "node_modules") {
       const res = await getJsFilesList(path.join(dir, item.name));
       res.forEach((f) => files.push(f));
     } else {
-      if (extensionsRegex.test(path.extname(item.name)))
+      if (extensionsRegex.test(path.extname(item.name))) {
         files.push(path.join(dir, item.name));
+      }
     }
   }
   return files;
@@ -137,7 +139,7 @@ const regexRequire = /require\s*\(\s*(['"])(.*?\.(?:ts|mts|cts))\1\s*\)/g;
 export function replaceTsExtensionsFromRegex(
   match: string,
   _: string,
-  p2: string
+  p2: string,
 ) {
   if (p2) {
     if (p2.endsWith(".ts")) {
@@ -157,7 +159,7 @@ export function replaceTsExtensionsFromRegex(
 }
 
 export async function changeTsExtInImportsInFile(file: string) {
-  const code = await fs.readFile(file, { encoding: "utf-8" });
+  const code = fs.readFileSync(file, { encoding: "utf-8" });
   const newCode = code
     // @ts-ignore
     .replace(regexFrom, replaceTsExtensionsFromRegex)
@@ -166,11 +168,11 @@ export async function changeTsExtInImportsInFile(file: string) {
     // @ts-ignore
     .replace(regexDynamicImport, replaceTsExtensionsFromRegex);
 
-  await fs.writeFile(file, newCode);
+  fs.writeFileSync(file, newCode);
 }
 
 export async function changeTsExtInRequireInfile(file: string) {
-  const code = await fs.readFile(file, { encoding: "utf-8" });
+  const code = fs.readFileSync(file, { encoding: "utf-8" });
 
   const newCode = code
     // @ts-ignore
@@ -178,7 +180,7 @@ export async function changeTsExtInRequireInfile(file: string) {
     // @ts-ignore
     .replace(regexDynamicImport, replaceTsExtensionsFromRegex);
 
-  await fs.writeFile(file, newCode);
+  fs.writeFileSync(file, newCode);
 }
 
 export function changeTsExtInImportsInCode(code: string) {
@@ -204,21 +206,21 @@ export function changeTsExtInRequireInCode(code: string) {
 }
 
 export async function minifyTsEmitJsFiles(src: string) {
-  const code = await fs.readFile(src, { encoding: "utf-8" });
+  const code = fs.readFileSync(src, { encoding: "utf-8" });
   const minify = await swc.minify(code, {
     ecma: 2022,
   });
   const mapPath = src + ".map";
-  if (await fs.stat(mapPath).catch(() => undefined)) {
+  if (fs.existsSync(mapPath)) {
     const mapName = path.basename(mapPath);
     minify.code += `\n//# sourceMappingURL=${mapName}\n`;
   }
-  await fs.writeFile(src, minify.code);
+  fs.writeFileSync(src, minify.code);
 }
 
 export function handleFileInArv(
   argv: string[],
-  cwd: string
+  cwd: string,
 ): {
   file: string;
   argvs: string[];

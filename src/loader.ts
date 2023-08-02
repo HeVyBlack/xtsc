@@ -32,7 +32,7 @@ export async function load(url, context, nextLoad) {
 
     if (ctsRegex.test(url)) format = "commonjs";
     else if (mtsRegex.test(url)) format = "module";
-    else format = await getPackageType(url);
+    else format = await getPackageType(url) || "commonjs";
 
     if (format === "commonjs") {
       return {
@@ -43,7 +43,7 @@ export async function load(url, context, nextLoad) {
 
     const transformedSource = swc.transformFileSync(
       fileURLToPath(url),
-      swcrcModuleJs
+      swcrcModuleJs,
     );
     return {
       format,

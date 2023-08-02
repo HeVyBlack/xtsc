@@ -63,7 +63,7 @@ type NextResolve = (specifier: string) => Promise<void>;
 export async function resolve(
   specifier: string,
   context: ResolveContext,
-  nextResolve: NextResolve
+  nextResolve: NextResolve,
 ) {
   if (extensionsRegex.test(specifier)) {
     const { parentURL = baseURL } = context;
@@ -89,18 +89,20 @@ const mtsRegex = /\.mts$/;
 export async function load(
   url: string,
   _context: LoadContext,
-  nextLoad: NextLoad
-): Promise<{
-  format: string;
-  shortCircuit: boolean;
-  source?: string;
-} | void> {
+  nextLoad: NextLoad,
+): Promise<
+  {
+    format: string;
+    shortCircuit: boolean;
+    source?: string;
+  } | void
+> {
   if (extensionsRegex.test(url)) {
     if (ctsRegex.test(url)) format = "commonjs";
 
     if (mtsRegex.test(url)) format = "module";
 
-    if (!format) format = await getPackageType(url);
+    if (!format) format = await getPackageType(url) || "commonjs";
 
     if (format === "commonjs") {
       return {

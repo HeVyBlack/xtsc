@@ -5,6 +5,7 @@ import log from "../../utils/logger.js";
 export class WatcherGenericProgram {
   constructor(optionsPath: string) {
     this.configPath = ts.findConfigFile("./", ts.sys.fileExists, optionsPath);
+
     if (!this.configPath) {
       log.error("Cannot find a valid tsconfig.json!");
       process.exit(1);
@@ -12,13 +13,13 @@ export class WatcherGenericProgram {
 
     this.host = ts.createWatchCompilerHost(
       this.configPath,
-      {},
+      undefined,
       ts.sys,
       this.createProgram,
       (diagnostic) => {
         xwtscReportDiagnostics([diagnostic]);
         this.diagnostics++;
-      }
+      },
     );
 
     this.defaultCreateProgram = this.host.createProgram;
@@ -35,7 +36,7 @@ export class WatcherGenericProgram {
 
   defaultCreateProgram: ts.CreateProgram<ts.SemanticDiagnosticsBuilderProgram>;
   defaultAfterCreateProgram: (
-    program: ts.SemanticDiagnosticsBuilderProgram
+    program: ts.SemanticDiagnosticsBuilderProgram,
   ) => void;
 
   init = (
@@ -43,8 +44,8 @@ export class WatcherGenericProgram {
     afterHook: (
       program: ts.SemanticDiagnosticsBuilderProgram,
       options: ts.CompilerOptions,
-      ctx: WatcherGenericProgram
-    ) => void = () => {}
+      ctx: WatcherGenericProgram,
+    ) => void = () => {},
   ) => {
     this.host.createProgram = (
       rootNammes,
@@ -52,7 +53,7 @@ export class WatcherGenericProgram {
       host,
       oldProgram,
       configFileParsingDiagnostics,
-      projectReferences
+      projectReferences,
     ) => {
       createHook();
       this.diagnostics = 0;
@@ -62,7 +63,7 @@ export class WatcherGenericProgram {
         host,
         oldProgram,
         configFileParsingDiagnostics,
-        projectReferences
+        projectReferences,
       );
     };
 

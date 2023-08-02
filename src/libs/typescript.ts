@@ -6,6 +6,7 @@ import {
   changeTsExtInImportsInFile,
   changeTsExtInRequireInfile,
   getJsFilesList,
+  getTsFilesList,
   minifyTsEmitJsFiles,
 } from "../utils/functions.js";
 import { getPackageType } from "../loader.js";
@@ -16,7 +17,7 @@ export function reportDiagnostic(diagnostic: Readonly<ts.Diagnostic>) {
 
 export function reportDiagnostics(
   diagnostics: ReadonlyArray<ts.Diagnostic>,
-  cwd: string = process.cwd()
+  cwd: string = process.cwd(),
 ) {
   const diagnosticLength = diagnostics.length;
 
@@ -32,12 +33,12 @@ export function reportDiagnostics(
         ? (filename) => filename
         : (filename) => filename.toLowerCase(),
       getNewLine: () => ts.sys.newLine,
-    })
+    }),
   );
 }
 
 export function xwtscReportDiagnostics(
-  diagnostics: ReadonlyArray<ts.Diagnostic>
+  diagnostics: ReadonlyArray<ts.Diagnostic>,
 ) {
   const diagnosticLength = diagnostics.length;
 
@@ -53,18 +54,18 @@ export function xwtscReportDiagnostics(
         ? (filename) => filename
         : (filename) => filename.toLowerCase(),
       getNewLine: () => ts.sys.newLine,
-    })
+    }),
   );
 }
 
 export function readDefaultTsConfig(
-  tsConfigPath = path.join(process.cwd(), "tsconfig.json")
+  tsConfigPath = path.join(process.cwd(), "tsconfig.json"),
 ): ts.CompilerOptions {
   let compilerOptions: Partial<
     ts.CompilerOptions & { fallbackToTs: (path: string) => boolean }
   > = {
     target: ts.ScriptTarget.ESNext,
-    module: ts.ModuleKind.NodeNext,
+    module: ts.ModuleKind.CommonJS,
     moduleResolution: ts.ModuleResolutionKind.NodeNext,
     sourceMap: true,
     esModuleInterop: true,
@@ -77,7 +78,10 @@ export function readDefaultTsConfig(
   const fullTsConfigPath = path.resolve(tsConfigPath);
 
   if (!ts.sys.fileExists(fullTsConfigPath)) {
-    return compilerOptions;
+    return {
+      ...compilerOptions,
+      rootNames: getTsFilesList(process.cwd()),
+    } as unknown as ts.CompilerOptions;
   }
 
   try {
@@ -86,25 +90,27 @@ export function readDefaultTsConfig(
     const { options, errors, fileNames } = ts.parseJsonConfigFileContent(
       config,
       ts.sys,
-      path.dirname(fullTsConfigPath)
+      path.dirname(fullTsConfigPath),
     );
 
     if (!errors.length) {
       compilerOptions = options;
-      compilerOptions.fileNames = fileNames;
+      compilerOptions.rootNames = fileNames;
       compilerOptions.configFilePath = fullTsConfigPath;
     } else {
       console.info(
         log.error(
-          `Convert compiler options from json failed, ${errors
-            .map((d) => d.messageText)
-            .join("\n")}`
-        )
+          `Convert compiler options from json failed, ${
+            errors
+              .map((d) => d.messageText)
+              .join("\n")
+          }`,
+        ),
       );
     }
   } catch (e) {
     console.info(
-      log.error(`Read ${tsConfigPath} failed: ${(e as Error).message}`)
+      log.error(`Read ${tsConfigPath} failed: ${(e as Error).message}`),
     );
   }
 
@@ -112,12 +118,12 @@ export function readDefaultTsConfig(
 }
 
 export async function typeCheckAndEmit(
-  fileNames: string[],
+  rootNames: string[],
   options: ts.CompilerOptions & {
     configFilePath?: string;
-  } = readDefaultTsConfig(path.join(process.cwd(), "tsconfig.json"))
+  } = readDefaultTsConfig(path.join(process.cwd(), "tsconfig.json")),
 ) {
-  const program = ts.createProgram(fileNames, {
+  const program = ts.createProgram(rootNames, {
     ...options,
   });
 
@@ -149,7 +155,7 @@ export async function typeCheckAndEmit(
 export async function watchTypeCheckAndEmit(
   tsConfig: ts.CompilerOptions & {
     configFilePath: string;
-  }
+  },
 ) {
   try {
     const createProgram = ts.createSemanticDiagnosticsBuilderProgram;
@@ -171,7 +177,7 @@ export async function watchTypeCheckAndEmit(
           extension: ".mts",
           isMixedContent: false,
         },
-      ]
+      ],
     );
 
     const origCreateProgram = host.createProgram;
@@ -211,7 +217,7 @@ export async function watchTypeCheckAndEmit(
 
 export async function handlePostTsFileCompile(
   src: string,
-  program: Pick<ts.Program, "getCompilerOptions">
+  program: Pick<ts.Program, "getCompilerOptions">,
 ) {
   const outDir = program.getCompilerOptions().outDir || process.cwd();
 
@@ -228,7 +234,7 @@ export async function handlePostTsFileCompile(
 }
 
 export async function handlePostTsCompile(
-  program: Pick<ts.Program, "getCompilerOptions">
+  program: Pick<ts.Program, "getCompilerOptions">,
 ) {
   const outDir = program.getCompilerOptions().outDir || process.cwd();
 
@@ -247,12 +253,12 @@ export async function handlePostTsCompile(
 }
 
 export function onlyTypeCheck(
-  fileNames: string[],
+  rootnames: string[],
   options: ts.CompilerOptions & {
     configFilePath?: string;
-  } = readDefaultTsConfig(path.join(process.cwd(), "tsconfig.json"))
+  } = readDefaultTsConfig(path.join(process.cwd(), "tsconfig.json")),
 ) {
-  const program = ts.createProgram(fileNames, {
+  const program = ts.createProgram(rootnames, {
     ...options,
   });
 
@@ -273,13 +279,13 @@ export function onlyTypeCheck(
 export async function watchOnlyTypeCheck(
   tsConfig: ts.CompilerOptions & {
     configFilePath: string;
-  }
+  },
 ) {
   try {
     const createProgram = ts.createSemanticDiagnosticsBuilderProgram;
 
     const host = ts.createWatchCompilerHost(
-      tsConfig.configFilePath,
+      tsConfig.configFilePath || path.resolve("tsconfig.json"),
       {},
       ts.sys,
       createProgram,
@@ -295,7 +301,7 @@ export async function watchOnlyTypeCheck(
           extension: ".mts",
           isMixedContent: false,
         },
-      ]
+      ],
     );
 
     const origCreateProgram = host.createProgram;

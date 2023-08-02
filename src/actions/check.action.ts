@@ -21,7 +21,7 @@ export function checkProject(args: string[]) {
 
   tsConfig.configFilePath = tsConfigPath;
 
-  onlyTypeCheck(tsConfig.files as string[], tsConfig);
+  onlyTypeCheck(tsConfig.rootNames as string[], tsConfig);
 }
 
 export function watchCheckProject(args: string[]) {

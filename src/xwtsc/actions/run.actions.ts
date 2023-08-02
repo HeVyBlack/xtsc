@@ -12,7 +12,7 @@ export default function (
 ) {
   const options: ts.CompilerOptions = readDefaultTsConfig(optionsPath);
 
-  const program = ts.createProgram(options.fileNames as string[], options);
+  const program = ts.createProgram(options.rootNames as string[], options);
 
   const diagnostics = ts.getPreEmitDiagnostics(program);
 

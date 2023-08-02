@@ -112,7 +112,7 @@ export async function bundleWithTypeCheck(
 
   tsConfig.configFilePath = tsConfigPath;
 
-  const isOk = onlyTypeCheck(tsConfig.files as string[], tsConfig);
+  const isOk = onlyTypeCheck(tsConfig.rootNames as string[], tsConfig);
 
   if (isOk) {
     const format = await getPackageType(pathToFileURL(src).href);
