@@ -1,8 +1,9 @@
 import { Module } from "node:module";
 import ts from "typescript";
-import { dirname, extname, resolve as resolvePath, sep } from "node:path";
+import { dirname, extname, join, resolve as resolvePath, sep } from "node:path";
 import { cwd } from "node:process";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import moduleAlias from "module-alias";
 
 const options = JSON.parse(process.env["XWTSC_OPTIONS"]!) as ts.CompilerOptions;
 
@@ -60,18 +61,77 @@ type ResolveContext = {
 
 type NextResolve = (specifier: string) => Promise<void>;
 
+const { paths = {}, baseUrl = cwd() } = options;
+
+const moduleAliases: {
+  multi_files: Record<string, string[]>;
+  single_file: Record<string, string>;
+} = {
+  multi_files: {},
+  single_file: {},
+};
+if (paths) {
+  for (const i in paths) {
+    if (i.endsWith("/*")) {
+      const i_replace = i.replace("/*", "");
+      const path_files = paths[i];
+      if (path_files) {
+        const p_files = [];
+        for (const p of path_files) {
+          const p_replace = p.replace("/*", "");
+          const p_join = join(baseUrl, p_replace);
+          moduleAlias.addAlias(i_replace, p_join);
+          p_files.push(p_join);
+        }
+        moduleAliases.multi_files[i_replace] = p_files;
+      }
+    } else {
+      const path_join = join(baseUrl, paths[i]![0]!);
+      moduleAlias.addAlias(i, path_join);
+      moduleAliases.single_file[i] = path_join;
+    }
+  }
+}
+
 export async function resolve(
   specifier: string,
   context: ResolveContext,
-  nextResolve: NextResolve,
+  nextResolve: NextResolve
 ) {
+  const { parentURL = baseURL } = context;
   if (extensionsRegex.test(specifier)) {
-    const { parentURL = baseURL } = context;
+    for (const i in moduleAliases.multi_files) {
+      if (specifier.includes(i)) {
+        const aliases = moduleAliases.multi_files[i]!;
+        for (const f of aliases) {
+          const f_replace = specifier.replace(i, f);
+          const f_exists = ts.sys.fileExists(f_replace);
+
+          if (f_exists) {
+            const url = new URL(f_replace, parentURL).href;
+            return {
+              shortCircuit: true,
+              url,
+            };
+          } else continue;
+        }
+      }
+    }
 
     return {
       shortCircuit: true,
       url: new URL(specifier, parentURL).href,
     };
+  } else {
+    for (const i in moduleAliases.single_file) {
+      if (specifier.includes(i)) {
+        const url = new URL(moduleAliases.single_file[i]!, parentURL).href;
+        return {
+          shortCircuit: true,
+          url,
+        };
+      }
+    }
   }
 
   return nextResolve(specifier);
@@ -89,20 +149,18 @@ const mtsRegex = /\.mts$/;
 export async function load(
   url: string,
   _context: LoadContext,
-  nextLoad: NextLoad,
-): Promise<
-  {
-    format: string;
-    shortCircuit: boolean;
-    source?: string;
-  } | void
-> {
+  nextLoad: NextLoad
+): Promise<{
+  format: string;
+  shortCircuit: boolean;
+  source?: string;
+} | void> {
   if (extensionsRegex.test(url)) {
     if (ctsRegex.test(url)) format = "commonjs";
 
     if (mtsRegex.test(url)) format = "module";
 
-    if (!format) format = await getPackageType(url) || "commonjs";
+    if (!format) format = (await getPackageType(url)) || "commonjs";
 
     if (format === "commonjs") {
       return {
@@ -111,7 +169,11 @@ export async function load(
       };
     }
 
-    const file = ts.sys.readFile(fileURLToPath(url), "utf-8")!;
+    const file_exists = ts.sys.fileExists(fileURLToPath(url));
+
+    const file = file_exists
+      ? ts.sys.readFile(fileURLToPath(url), "utf-8")!
+      : "";
 
     const compilerOptions: ts.CompilerOptions = { ...options };
 

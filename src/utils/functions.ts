@@ -37,7 +37,7 @@ export const handleTscEmitFile = (options: ts.CompilerOptions) =>
     text: string,
     writeByteOrderMark: boolean,
     _?: (message: string) => void,
-    sourceFiles?: readonly ts.SourceFile[],
+    sourceFiles?: readonly ts.SourceFile[]
   ) {
     const avoidDTsRegex = /\.d\.(c|m)?js$/;
 
@@ -139,7 +139,7 @@ const regexRequire = /require\s*\(\s*(['"])(.*?\.(?:ts|mts|cts))\1\s*\)/g;
 export function replaceTsExtensionsFromRegex(
   match: string,
   _: string,
-  p2: string,
+  p2: string
 ) {
   if (p2) {
     if (p2.endsWith(".ts")) {
@@ -220,7 +220,7 @@ export async function minifyTsEmitJsFiles(src: string) {
 
 export function handleFileInArv(
   argv: string[],
-  cwd: string,
+  cwd: string
 ): {
   file: string;
   argvs: string[];
