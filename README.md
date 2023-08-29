@@ -34,6 +34,9 @@ What this new command does:
 
 The point of this new command, is to use the most Typescript's API services, so, will build using the **Typescript's Compiler**, will make **typecheck** before initialize the program, and, will use the **transpileModule method**.
 
+***New:**
+Add partial support for path alias. Now you can use path alias in your project, but, at the moment,
+is only available for `run` and `watch` options.
 
 
 **Actions:**
