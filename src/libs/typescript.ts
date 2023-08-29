@@ -95,8 +95,8 @@ export function readDefaultTsConfig(
 
     if (!errors.length) {
       compilerOptions = options;
-      compilerOptions.rootNames = fileNames;
-      compilerOptions.configFilePath = fullTsConfigPath;
+      compilerOptions["rootNames"] = fileNames;
+      compilerOptions["configFilePath"] = fullTsConfigPath;
     } else {
       console.info(
         log.error(

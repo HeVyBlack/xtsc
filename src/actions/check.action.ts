@@ -19,9 +19,9 @@ export function checkProject(args: string[]) {
     tsConfig = readDefaultTsConfig(tsConfigPath);
   }
 
-  tsConfig.configFilePath = tsConfigPath;
+  tsConfig["rootNames"] = [tsConfigPath];
 
-  onlyTypeCheck(tsConfig.rootNames as string[], tsConfig);
+  onlyTypeCheck(tsConfig["rootNames"] as string[], tsConfig);
 }
 
 export function watchCheckProject(args: string[]) {
@@ -36,7 +36,7 @@ export function watchCheckProject(args: string[]) {
     tsConfig = readDefaultTsConfig(tsConfigPath);
   }
 
-  tsConfig.configFilePath = tsConfigPath;
+  tsConfig["configFilePath"] = tsConfigPath;
 
   log.info("Watching for changes...");
   watchOnlyTypeCheck(tsConfig as CompilerOptions & { configFilePath: string });

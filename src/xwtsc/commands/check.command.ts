@@ -19,5 +19,5 @@ export default function (argv: string[]) {
 
   if (argv.includes("--watch")) {
     new WatcherGenericProgram(optionsPath).init();
-  } else new CheckProgram(options.rootNames as string[], options).check();
+  } else new CheckProgram(options["rootNames"] as string[], options).check();
 }

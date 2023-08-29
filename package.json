@@ -1,6 +1,6 @@
 {
   "name": "xtsc",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "A Typescript loader",
   "main": "build/index.js",
   "type": "module",
@@ -32,6 +32,7 @@
     "chokidar": "3.5.3",
     "esbuild": "0.19.2",
     "module-alias": "2.2.3",
+    "tsc-alias": "1.8.7",
     "typescript": "5.2.2"
   },
   "devDependencies": {

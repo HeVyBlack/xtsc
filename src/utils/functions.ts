@@ -4,6 +4,7 @@ import fs from "fs";
 import path from "node:path";
 import ts from "typescript";
 import log from "./logger.js";
+import { prepareSingleFileReplaceTscAliasPaths } from "tsc-alias";
 
 export function handleOnExitMainProcess(child: ChildProcess) {
   ["SIGTERM", "SIGINT"].forEach((signal) => {
@@ -31,8 +32,11 @@ export function changeTsExtInText(text: string) {
   return new_text;
 }
 
-export const handleTscEmitFile = (options: ts.CompilerOptions) =>
-  function (
+export const handleTscEmitFile = (options: ts.CompilerOptions) => {
+  const runFile = prepareSingleFileReplaceTscAliasPaths({
+    resolveFullPaths: true,
+  });
+  return function (
     fileName: string,
     text: string,
     writeByteOrderMark: boolean,
@@ -57,9 +61,13 @@ export const handleTscEmitFile = (options: ts.CompilerOptions) =>
             target: ts.ScriptTarget.ESNext,
           },
         });
-        new_text = changeTsExtInText(new_text);
 
-        ts.sys.writeFile(fileName, new_text, writeByteOrderMark);
+        runFile.then((runFile) => {
+          new_text = runFile({ fileContents: new_text, filePath: fileName });
+          new_text = changeTsExtInText(new_text);
+          ts.sys.writeFile(fileName, new_text, writeByteOrderMark);
+        });
+
         break;
       }
       case ".cjs": {
@@ -76,16 +84,23 @@ export const handleTscEmitFile = (options: ts.CompilerOptions) =>
           },
         });
 
-        new_text = changeTsExtInText(new_text);
+        runFile.then((runFile) => {
+          new_text = runFile({ fileContents: new_text, filePath: fileName });
+          new_text = changeTsExtInText(new_text);
+          ts.sys.writeFile(fileName, new_text, writeByteOrderMark);
+        });
 
-        ts.sys.writeFile(fileName, new_text, writeByteOrderMark);
         break;
       }
       case ".js": {
         let new_text = respectDynamicImport(text);
-        new_text = changeTsExtInText(new_text);
 
-        ts.sys.writeFile(fileName, new_text, writeByteOrderMark);
+        runFile.then((runFile) => {
+          new_text = runFile({ fileContents: new_text, filePath: fileName });
+          new_text = changeTsExtInText(new_text);
+          ts.sys.writeFile(fileName, new_text, writeByteOrderMark);
+        });
+
         break;
       }
       default:
@@ -93,6 +108,7 @@ export const handleTscEmitFile = (options: ts.CompilerOptions) =>
         break;
     }
   };
+};
 
 export function getTsFilesList(dir: string) {
   const extensionsRegex = /\.ts$|\.cts$|\.mts$/;

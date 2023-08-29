@@ -19,9 +19,9 @@ export function runFileWithTypeCheck(
     tsConfig = readDefaultTsConfig(tsConfigPath);
   }
 
-  tsConfig.configFilePath = tsConfigPath;
+  tsConfig["configFilePath"] = tsConfigPath;
 
-  const isOk = onlyTypeCheck(tsConfig.rootNames as string[], tsConfig);
+  const isOk = onlyTypeCheck(tsConfig["rootNames"] as string[], tsConfig);
 
   if (isOk) {
     const child = spawnChild(file, fileArgs);

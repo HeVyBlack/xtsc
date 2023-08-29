@@ -110,9 +110,9 @@ export async function bundleWithTypeCheck(
     tsConfig = readDefaultTsConfig(tsConfigPath);
   }
 
-  tsConfig.configFilePath = tsConfigPath;
+  tsConfig["configFilePath"] = tsConfigPath;
 
-  const isOk = onlyTypeCheck(tsConfig.rootNames as string[], tsConfig);
+  const isOk = onlyTypeCheck(tsConfig["rootNames"] as string[], tsConfig);
 
   if (isOk) {
     const format = await getPackageType(pathToFileURL(src).href);
@@ -203,14 +203,14 @@ export async function watchBundleWithTypeCheck(
     tsConfig = readDefaultTsConfig(tsConfigPath);
   }
 
-  tsConfig.configFilePath = tsConfigPath;
+  tsConfig["configFilePath"] = tsConfigPath;
   const sourceMap = tsConfig.sourceMap || process.argv.includes("--sourceMaps");
 
   try {
     const createProgram = ts.createSemanticDiagnosticsBuilderProgram;
 
     const host = ts.createWatchCompilerHost(
-      tsConfig.configFilePath as string,
+      tsConfig["configFilePath"] as string,
       {},
       ts.sys,
       createProgram,

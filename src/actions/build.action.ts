@@ -36,7 +36,7 @@ export async function buildWithTypeCheck(args: string[]) {
   if (args.includes("--watch"))
     return await watchTypeCheckAndEmit(tsConfig as TsConfig);
 
-  await typeCheckAndEmit(tsConfig.rootNames as string[], tsConfig);
+  await typeCheckAndEmit(tsConfig["rootNames"] as string[], tsConfig);
 }
 
 export async function buildWithOutTypeCheck(

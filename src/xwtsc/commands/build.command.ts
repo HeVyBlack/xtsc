@@ -40,7 +40,7 @@ export default function (argv: string[]) {
       tsConfigPath = path.join(process.cwd(), "tsconfig.json");
       options = readDefaultTsConfig(tsConfigPath);
     }
-    new BuildProgram(options.rootNames as string[], {
+    new BuildProgram(options["rootNames"] as string[], {
       ...options,
       noEmit: true,
       noEmitOnError: false,
