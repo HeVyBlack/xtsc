@@ -326,50 +326,76 @@ export async function watchOnlyTypeCheck(
 }
 
 function ChangeTsImportVisitor(pathAliases: ts.MapLike<string[]> = {}) {
+  function getNewText(string: ts.StringLiteral) {
+    // Will search for all the routes. Ej: ./index.ts | ../index.ts
+    const isTsImportRgx = /(\.{1,2}\/){1,}.*\.(c|m)?(?:ts)/;
+    // Get the text from the specifier
+    const text = string.text;
+
+    // Using the regex, will replace all the ts extensions with js extensions
+    let new_text = text.replace(isTsImportRgx, (match) => {
+      const replace = match.replace(/ts$/, "js");
+      return replace;
+    });
+
+    /**
+     * The next for loop, will be searching for path alias
+     * and, will change the .ts extension with .js extension
+     * leaving the work of resolve it to tsc-alias
+     */
+
+    // Check if the route is a alias
+    // Loop through all the pathAliases
+    for (const i in pathAliases) {
+      // Create a regex expresion with the key
+      const i_regex = new RegExp(`^${i}`);
+      // Check if the route is a path alias
+      if (i_regex.test(new_text)) {
+        // change the .ts extension to .js extension
+        new_text = new_text.replace(/ts$/, "js");
+        break;
+      }
+    }
+
+    return new_text;
+  }
+
   return function (node: ts.Node): ts.Node {
     if (ts.isImportDeclaration(node)) {
-      const importSpecifier = node.moduleSpecifier;
-
       // Check that the specifier is a stringLiteral
-      if (ts.isStringLiteral(importSpecifier)) {
-        // Will search for all the routes. Ej: ./index.ts | ../index.ts
-        const isTsImportRgx = /(\.{1,2}\/){1,}.*\.(c|m)?(?:ts)/;
-        // Get the text from the specifier
-        const text = importSpecifier.text;
-
+      if (ts.isStringLiteral(node.moduleSpecifier)) {
         // Using the regex, will replace all the ts extensions with js extensions
-        let new_text = text.replace(isTsImportRgx, (match) => {
-          const replace = match.replace(/ts$/, "js");
-          return replace;
-        });
 
-        /**
-         * The next for loop, will be searching for path alias
-         * and, will change the .ts extension with .js extension
-         * leaving the work of resolve it to tsc-alias
-         */
-
-        // Check if the route is a alias
-        // Loop through all the pathAliases
-        for (const i in pathAliases) {
-          // Create a regex expresion with the key
-          const i_regex = new RegExp(`^${i}`);
-          // Check if the route is a path alias
-          if (i_regex.test(new_text)) {
-            // change the .ts extension to .js extension
-            new_text = new_text.replace(/ts$/, "js");
-            break;
-          }
-        }
-
-        /**
-         * Return a new import node, with the new route, but, with all
-         * other options comming from the old node
-         */
-        return ts.factory.createImportDeclaration(
+        const new_text = getNewText(node.moduleSpecifier);
+        node.moduleSpecifier.text = new_text;
+        return ts.factory.updateImportDeclaration(
+          node,
           node.modifiers,
           node.importClause,
-          ts.factory.createStringLiteral(new_text),
+          node.moduleSpecifier,
+          node.assertClause
+        );
+      }
+    }
+    if (ts.isExportDeclaration(node)) {
+      if (!node.moduleSpecifier) return node;
+
+      // Check that the specifier is a stringLiteral
+      if (ts.isStringLiteral(node.moduleSpecifier)) {
+        const new_text = getNewText(node.moduleSpecifier);
+
+        node.moduleSpecifier.text = new_text;
+
+        /**
+         * Return a new export node, with the new route, but, with all
+         * other options comming from the old node
+         */
+        return ts.factory.updateExportDeclaration(
+          node,
+          node.modifiers,
+          node.isTypeOnly,
+          node.exportClause,
+          node.moduleSpecifier,
           node.assertClause
         );
       }
