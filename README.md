@@ -24,6 +24,7 @@ What this new command does:
 | init | Create a **tsconfig.json** |
 
 
+
 |flag| Available on |
 |--|--|
 | --watch | build, bundle, check |

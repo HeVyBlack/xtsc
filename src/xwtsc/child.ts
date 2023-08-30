@@ -9,7 +9,10 @@ export default function (
 ) {
   const child = fork(file, fileArgs, {
     execArgv: ["--no-warnings", `--loader=${tscHooksPath}`],
-    env: { ...process.env, XWTSC_OPTIONS: JSON.stringify(options) },
+    env: {
+      ...process.env,
+      XWTSC_OPTIONS: JSON.stringify(options),
+    },
   });
 
   return child;

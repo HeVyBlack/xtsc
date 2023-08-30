@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+
+process.env["IS_XTSC"] = "true";
 import { tscRepl } from "./utils/repl.js";
 import buildCommand from "./xwtsc/commands/build.command.js";
 import bundleCommand from "./xwtsc/commands/bundle.command.js";

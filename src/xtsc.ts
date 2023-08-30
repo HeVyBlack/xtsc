@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+process.env["IS_XTSC"] = "true";
 import manageCommands from "./commands/manage.commands.js";
 import { initRepl } from "./utils/repl.js";
 

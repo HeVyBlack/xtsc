@@ -7,7 +7,6 @@ export default function (file: string, fileArgs?: string[]) {
   if (file) args.push(file);
 
   if (fileArgs) args = args.concat(fileArgs);
-
   return spawn(
     process.execPath,
     [
@@ -18,6 +17,7 @@ export default function (file: string, fileArgs?: string[]) {
     ],
     {
       stdio: "inherit",
+      env: { ...process.env },
     }
   );
 }
