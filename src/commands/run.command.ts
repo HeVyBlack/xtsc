@@ -1,7 +1,6 @@
 import fs from "node:fs/promises";
 import log from "../utils/logger.js";
 import {
-  runFileWithTypeCheck,
   runFileWithOutTypeCheck,
 } from "../actions/run.actions.js";
 import path from "node:path";
@@ -28,7 +27,5 @@ export default async function (file: string, args: string[]) {
   if (args.includes("--args="))
     fileArgs = args.splice(args.indexOf("--args=") + 1);
 
-  if (args.includes("--wTs"))
-    runFileWithTypeCheck(filePath as string, fileArgs, args);
-  else runFileWithOutTypeCheck(filePath, fileArgs);
+  runFileWithOutTypeCheck(filePath, fileArgs);
 }

@@ -34,7 +34,10 @@ What this new command does:
 
 The point of this new command, is to use the most Typescript's API services, so, will build using the **Typescript's Compiler**, will make **typecheck** before initialize the program, and, will use the **transpileModule method**.
 
+
 ***New:**
+
+
 Now, you can use path alias in your project. Can be used in `run`, `watch`, `bundle`, `build`
 
 
@@ -60,9 +63,6 @@ Now, you can use path alias in your project. Can be used in `run`, `watch`, `bun
 
 *Build:*
 
--  `--wTs` Will use the **Typescript** compiler, so, also, will make a **type check**.
-
--  `--tsconfig [tsconfig]` Only useful when `--wTs` is active. Will search and use the provided tsconfig.
 
 -  `--minify` Will minify each *Javascript* file.
 
@@ -72,19 +72,9 @@ Now, you can use path alias in your project. Can be used in `run`, `watch`, `bun
 
 -  `--noClear` Avoid clearing the console when you are using the --watch flag.
 
-*Notes:*
-
-In the case you are using the --wTs flag, you only need to especify the **outDir in the tsconfig** (Same logic for **sourceMaps**).
-
-For now, you can't combine --watch and --wTs with *build file*, in the future, this will be possible.
-
-  
 
 *Bundle:*
 
--  `--wTs` Will make a **type check.**
-
--  `--tsconfig [tsconfig]` Only useful when `--wTs` is active. Will search and use the provided tsconfig.
 
 -  `--minify` Will minify the *.js* file.
 
@@ -94,25 +84,15 @@ For now, you can't combine --watch and --wTs with *build file*, in the future, t
 
 -  `--noClear` Avoid clearing the console when you are using the --watch flag.
 
-  
-
-*Notes:* In the case you are using the --wTs flag, you don't have to use the --sourceMaps flag, only set to true the **sourceMap option in the tsconfig.**
-
-  
-
 *Run / Watch:*
-
--  `--wTs` Will make a before the program initializes **type check.**
-
--  `--tsconfig [tsconfig]` Only useful when `--wTs` is active. Will search and use the provided tsconfig.
 
 -  `--noClear` Avoid clearing the console when the program initializes.
 
 -  `--args= [...args]` Args for your program, this flag, must be the last flag.
 
+
 *Check:*
 
-  
 
 -  `--watch` Watch for changes.
 

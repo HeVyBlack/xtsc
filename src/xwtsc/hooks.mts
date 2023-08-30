@@ -39,7 +39,7 @@ function handleFileTranspilation(module: ModuleType, filename: string) {
   const transpile = ts.transpileModule(file, {
     compilerOptions: {
       ...options,
-      module: ts.ModuleKind.CommonJS,
+      module: ts.ModuleKind.Node16,
     },
   });
 
@@ -141,26 +141,44 @@ type LoadContext = { format: string | undefined; importAssertions: Object };
 
 type NextLoad = (url: string) => Promise<void>;
 
-let format: string;
-
-const ctsRegex = /\.cts$/;
-const mtsRegex = /\.mts$/;
-
 export async function load(
   url: string,
   _context: LoadContext,
   nextLoad: NextLoad
 ): Promise<{
-  format: string;
+  format: "commonjs" | "module";
   shortCircuit: boolean;
   source?: string;
 } | void> {
   if (extensionsRegex.test(url)) {
-    if (ctsRegex.test(url)) format = "commonjs";
+    if (url.endsWith(".cts")) {
+      return {
+        format: "commonjs",
+        shortCircuit: true,
+      };
+    }
 
-    if (mtsRegex.test(url)) format = "module";
+    if (url.endsWith(".mts")) {
+      const file = ts.sys.readFile(fileURLToPath(url), "utf-8") || "";
 
-    if (!format) format = (await getPackageType(url)) || "commonjs";
+      const compilerOptions: ts.CompilerOptions = {
+        ...options,
+        module: ts.ModuleKind.ESNext,
+        target: ts.ScriptTarget.ESNext,
+      };
+
+      const { outputText } = ts.transpileModule(file, {
+        compilerOptions,
+      });
+
+      return {
+        format: "module",
+        shortCircuit: true,
+        source: outputText,
+      };
+    }
+
+    const format = getPackageType(url);
 
     if (format === "commonjs") {
       return {
@@ -169,11 +187,7 @@ export async function load(
       };
     }
 
-    const file_exists = ts.sys.fileExists(fileURLToPath(url));
-
-    const file = file_exists
-      ? ts.sys.readFile(fileURLToPath(url), "utf-8")!
-      : "";
+    const file = ts.sys.readFile(fileURLToPath(url), "utf-8") || "";
 
     const compilerOptions: ts.CompilerOptions = { ...options };
 
@@ -182,21 +196,21 @@ export async function load(
       compilerOptions.target = ts.ScriptTarget.ESNext;
     }
 
-    const transpile = ts.transpileModule(file, {
+    const { outputText } = ts.transpileModule(file, {
       compilerOptions,
     });
 
     return {
       format,
       shortCircuit: true,
-      source: transpile["outputText"],
+      source: outputText,
     };
   }
 
   return nextLoad(url);
 }
 
-export function getPackageType(url: string): any {
+export function getPackageType(url: string): "commonjs" | "module" {
   const isFilePath = !!extname(url);
 
   const dir = isFilePath ? dirname(fileURLToPath(url)) : url;
@@ -205,11 +219,12 @@ export function getPackageType(url: string): any {
 
   const file = ts.sys.readFile(packagePath, "utf-8")!;
 
-  if (!file) return dir.length > 1 && getPackageType(resolvePath(dir, ".."));
+  if (!file) {
+    if (dir.length > 1) return getPackageType(resolvePath(dir, ".."));
+    else return "commonjs";
+  }
 
   const type = JSON.parse(file).type || "commonjs";
 
-  if (type) return type;
-
-  return dir.length > 1 && getPackageType(resolvePath(dir, ".."));
+  return type;
 }

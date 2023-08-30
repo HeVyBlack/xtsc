@@ -14,9 +14,9 @@ export const tsCompilerOptions = {
   experimentalDecorators: true,
 };
 
-export const sourceDir = path.join(path.parse(import.meta.url).dir, "..");
+const sourceDir = path.join(path.parse(import.meta.url).dir, "..");
 
-export const platform = os.platform();
+const platform = os.platform();
 
 export const tscHooksPath =
   platform === "win32"
@@ -116,4 +116,5 @@ export const tsConfigBasic = {
   allowImportingTsExtensions: true,
   noEmit: true,
   noEmitOnError: true,
+  strict: true,
 };

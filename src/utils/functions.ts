@@ -5,6 +5,7 @@ import path from "node:path";
 import ts from "typescript";
 import log from "./logger.js";
 import { prepareSingleFileReplaceTscAliasPaths } from "tsc-alias";
+import { ChangeTsImportsTransformerForTransformModule } from "../libs/typescript.js";
 
 export function handleOnExitMainProcess(child: ChildProcess) {
   ["SIGTERM", "SIGINT"].forEach((signal) => {
@@ -23,18 +24,10 @@ export function respectDynamicImport(code: string) {
   return code;
 }
 
-export function changeTsExtInText(text: string) {
-  const regex =
-    /((?:((import|require)(\s|\()|(from\s))["'](\.{1,2}\/){1,}.*\.(c|m)?)(?:ts))/g;
-  const new_text = text.replace(regex, (match) => {
-    return match.replace(/ts$/, "js");
-  });
-  return new_text;
-}
-
 export const handleTscEmitFile = (options: ts.CompilerOptions) => {
   const runFile = prepareSingleFileReplaceTscAliasPaths({
     resolveFullPaths: true,
+    configFile: options["configFilePath"] as string,
   });
   return function (
     fileName: string,
@@ -60,11 +53,13 @@ export const handleTscEmitFile = (options: ts.CompilerOptions) => {
             module: ts.ModuleKind.ESNext,
             target: ts.ScriptTarget.ESNext,
           },
+          transformers: {
+            before: [ChangeTsImportsTransformerForTransformModule(options)],
+          },
         });
 
         runFile.then((runFile) => {
           new_text = runFile({ fileContents: new_text, filePath: fileName });
-          new_text = changeTsExtInText(new_text);
           ts.sys.writeFile(fileName, new_text, writeByteOrderMark);
         });
 
@@ -82,11 +77,13 @@ export const handleTscEmitFile = (options: ts.CompilerOptions) => {
             module: ts.ModuleKind.CommonJS,
             target: ts.ScriptTarget.ES2017,
           },
+          transformers: {
+            before: [ChangeTsImportsTransformerForTransformModule(options)],
+          },
         });
 
         runFile.then((runFile) => {
           new_text = runFile({ fileContents: new_text, filePath: fileName });
-          new_text = changeTsExtInText(new_text);
           ts.sys.writeFile(fileName, new_text, writeByteOrderMark);
         });
 
@@ -94,10 +91,8 @@ export const handleTscEmitFile = (options: ts.CompilerOptions) => {
       }
       case ".js": {
         let new_text = respectDynamicImport(text);
-
         runFile.then((runFile) => {
           new_text = runFile({ fileContents: new_text, filePath: fileName });
-          new_text = changeTsExtInText(new_text);
           ts.sys.writeFile(fileName, new_text, writeByteOrderMark);
         });
 
@@ -151,28 +146,6 @@ const regexImport = /import\s*(['"])(.*?\.(?:ts|mts|cts))\1;/g;
 const regexDynamicImport = /import\s*\(\s*(['"])(.*?\.(?:ts|mts|cts))\1\s*\)/g;
 
 const regexRequire = /require\s*\(\s*(['"])(.*?\.(?:ts|mts|cts))\1\s*\)/g;
-
-export function replaceTsExtensionsFromRegex(
-  match: string,
-  _: string,
-  p2: string
-) {
-  if (p2) {
-    if (p2.endsWith(".ts")) {
-      const res = p2.replace(/\.ts$/, ".js");
-      return match.replace(p2, res);
-    } else if (p2.endsWith(".mts")) {
-      const res = p2.replace(/\.mts$/, ".mjs");
-      return match.replace(p2, res);
-    } else if (p2.endsWith(".cts")) {
-      const res = p2.replace(/\.cts$/, ".cjs");
-      return match.replace(p2, res);
-    } else {
-      return match;
-    }
-  }
-  return;
-}
 
 export async function changeTsExtInImportsInFile(file: string) {
   const code = fs.readFileSync(file, { encoding: "utf-8" });

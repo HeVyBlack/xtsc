@@ -1,6 +1,7 @@
 import ts from "typescript";
 import esbuild from "esbuild";
 import {
+  ChangeTsImportsTransformer,
   readDefaultTsConfig,
   xwtscReportDiagnostics,
 } from "../../libs/typescript.js";
@@ -47,6 +48,9 @@ export const tscPlugin = (options: ts.CompilerOptions): esbuild.Plugin => ({
           module: ts.ModuleKind.ESNext,
           target: ts.ScriptTarget.ESNext,
         },
+        transformers: {
+          before: [ChangeTsImportsTransformer],
+        },
       });
       return {
         contents: transpile,
@@ -83,7 +87,6 @@ export const tscPlugin = (options: ts.CompilerOptions): esbuild.Plugin => ({
           }
         }
       }
-
       return;
     });
   },

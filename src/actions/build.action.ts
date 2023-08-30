@@ -1,10 +1,5 @@
 import path from "node:path";
 import {
-  readDefaultTsConfig,
-  typeCheckAndEmit,
-  watchTypeCheckAndEmit,
-} from "../libs/typescript.js";
-import {
   changeTsExtInImportsInCode,
   changeTsExtInRequireInCode,
   getTsFilesList,
@@ -13,38 +8,16 @@ import swc from "@swc/core";
 import { getPackageType } from "../loader.js";
 import { swcrcCommonJs, swcrcModuleJs } from "../utils/variables.js";
 import fs from "node:fs/promises";
-import ts from "typescript";
 import { pathToFileURL } from "node:url";
 import { watch } from "chokidar";
 import log from "../utils/logger.js";
-
-export async function buildWithTypeCheck(args: string[]) {
-  type TsConfig = ts.CompilerOptions & { configFilePath: string };
-  let tsConfig: ts.CompilerOptions & { configFilePath?: string };
-  let tsConfigPath;
-
-  if (args.includes("--tsconfig")) {
-    tsConfigPath = args[args.indexOf("--tsconfig") + 1];
-    tsConfig = readDefaultTsConfig(tsConfigPath);
-  } else {
-    tsConfigPath = path.join(process.cwd(), "tsconfig.json");
-    tsConfig = readDefaultTsConfig(tsConfigPath);
-  }
-
-  tsConfig.configFilePath = String(tsConfigPath);
-
-  if (args.includes("--watch"))
-    return await watchTypeCheckAndEmit(tsConfig as TsConfig);
-
-  await typeCheckAndEmit(tsConfig["rootNames"] as string[], tsConfig);
-}
 
 export async function buildWithOutTypeCheck(
   src: string,
   out: string,
   format?: string
 ) {
-  const files = await getTsFilesList(src);
+  const files = getTsFilesList(src);
   if (!format) format = await getPackageType(src);
   log.info("Building...");
   files.forEach(async (f) => {
