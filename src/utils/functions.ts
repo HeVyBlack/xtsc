@@ -5,7 +5,6 @@ import path from "node:path";
 import ts from "typescript";
 import log from "./logger.js";
 import { prepareSingleFileReplaceTscAliasPaths } from "tsc-alias";
-import { ChangeTsImportsTransformerForTransformModule } from "../libs/typescript.js";
 
 export function handleOnExitMainProcess(child: ChildProcess) {
   ["SIGTERM", "SIGINT"].forEach((signal) => {
@@ -24,12 +23,39 @@ export function respectDynamicImport(code: string) {
   return code;
 }
 
+function changeTsExtInText(text: string, paths: ts.MapLike<string[]>) {
+  const importsRegex =
+    /(?:import\s.*from\s+['"]([^"']+)["'])|require\s*\(\s*['"]([^'"]+)["']\s*\)/g;
+
+  const relativePath = /^(\/|\.{1,2}\/)/;
+
+  const new_text = text.replace(
+    importsRegex,
+    (match, p1: string, p2: string) => {
+      const imp = p1 || p2;
+
+      let new_imp = imp;
+
+      for (const p in paths) {
+        const p_regex = new RegExp(`^${p}`);
+        if (p_regex.test(imp)) new_imp = new_imp.replace(/ts$/, "js");
+      }
+      if (relativePath.test(imp)) new_imp = new_imp.replace(/ts$/, "js");
+    
+      return match.replace(imp, new_imp);
+    }
+  );
+
+  return new_text;
+}
+
 export const handleTscEmitFile = (options: ts.CompilerOptions) => {
   const runFile = prepareSingleFileReplaceTscAliasPaths({
     resolveFullPaths: true,
     configFile: options["configFilePath"] as string,
   });
-  return function (
+  const { paths = {} } = options;
+  return async function (
     fileName: string,
     text: string,
     writeByteOrderMark: boolean,
@@ -53,12 +79,11 @@ export const handleTscEmitFile = (options: ts.CompilerOptions) => {
             module: ts.ModuleKind.ESNext,
             target: ts.ScriptTarget.ESNext,
           },
-          transformers: {
-            before: [ChangeTsImportsTransformerForTransformModule(options)],
-          },
+          transformers: {},
         });
 
         runFile.then((runFile) => {
+          new_text = changeTsExtInText(text, paths);
           new_text = runFile({ fileContents: new_text, filePath: fileName });
           ts.sys.writeFile(fileName, new_text, writeByteOrderMark);
         });
@@ -77,12 +102,11 @@ export const handleTscEmitFile = (options: ts.CompilerOptions) => {
             module: ts.ModuleKind.CommonJS,
             target: ts.ScriptTarget.ES2017,
           },
-          transformers: {
-            before: [ChangeTsImportsTransformerForTransformModule(options)],
-          },
+          transformers: {},
         });
 
         runFile.then((runFile) => {
+          new_text = changeTsExtInText(text, paths);
           new_text = runFile({ fileContents: new_text, filePath: fileName });
           ts.sys.writeFile(fileName, new_text, writeByteOrderMark);
         });
@@ -92,6 +116,7 @@ export const handleTscEmitFile = (options: ts.CompilerOptions) => {
       case ".js": {
         let new_text = respectDynamicImport(text);
         runFile.then((runFile) => {
+          new_text = changeTsExtInText(text, paths);
           new_text = runFile({ fileContents: new_text, filePath: fileName });
           ts.sys.writeFile(fileName, new_text, writeByteOrderMark);
         });

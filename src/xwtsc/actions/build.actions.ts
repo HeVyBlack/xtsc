@@ -1,8 +1,5 @@
 import ts from "typescript";
-import {
-  ChangeTsImportsTransformer,
-  xwtscReportDiagnostics,
-} from "../../libs/typescript.js";
+import { xwtscReportDiagnostics } from "../../libs/typescript.js";
 import { handleTscEmitFile } from "../../utils/functions.js";
 
 export class BuildProgram {
@@ -32,9 +29,7 @@ export class BuildProgram {
         handleTscEmitFile(this.options),
         undefined,
         undefined,
-        {
-          before: [ChangeTsImportsTransformer],
-        }
+        {}
       );
     }
   };
