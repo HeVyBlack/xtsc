@@ -325,10 +325,10 @@ export async function watchOnlyTypeCheck(
   }
 }
 
-function ChangeTsImportVisitor(pathAliases: ts.MapLike<string[]> = {}) {
+function ChangeTsPathsVisitor(pathAliases: ts.MapLike<string[]> = {}) {
   function getNewText(string: ts.StringLiteral) {
     // Will search for all the routes. Ej: ./index.ts | ../index.ts
-    const isTsImportRgx = /(\.{1,2}\/){1,}.*\.(c|m)?(?:ts)/;
+    const isTsImportRgx = /(\/|\.{1,2}\/){1,}.*\.(c|m)?(?:ts)/;
     // Get the text from the specifier
     const text = string.text;
 
@@ -414,7 +414,7 @@ export function ChangeTsImportsTransformer(ctx: ts.TransformationContext) {
       // On every lopp, visitor will be called
       return ts.visitEachChild(
         sourceFile,
-        ChangeTsImportVisitor(pathAliases),
+        ChangeTsPathsVisitor(pathAliases),
         ctx
       );
     },
@@ -436,7 +436,7 @@ export function ChangeTsImportsTransformerForTransformModule(
         // On every lopp, visitor will be called
         return ts.visitEachChild(
           sourceFile,
-          ChangeTsImportVisitor(pathAliases),
+          ChangeTsPathsVisitor(pathAliases),
           ctx
         );
       },
