@@ -25,14 +25,14 @@ export function respectDynamicImport(code: string) {
 
 function changeTsExtInText(text: string, paths: ts.MapLike<string[]>) {
   const importsRegex =
-    /(?:import\s.*from\s+['"]([^"']+)["'])|require\s*\(\s*['"]([^'"]+)["']\s*\)/g;
+    /(?:(import|export)\s.*from\s+['"]([^"']+)["'])|require\s*\(\s*['"]([^'"]+)["']\s*\)/g;
 
   const relativePath = /^(\/|\.{1,2}\/)/;
 
   const new_text = text.replace(
     importsRegex,
-    (match, p1: string, p2: string) => {
-      const imp = p1 || p2;
+    (match, _: string, p2: string, p3: string) => {
+      const imp = p2 || p3;
 
       let new_imp = imp;
 
@@ -41,7 +41,7 @@ function changeTsExtInText(text: string, paths: ts.MapLike<string[]>) {
         if (p_regex.test(imp)) new_imp = new_imp.replace(/ts$/, "js");
       }
       if (relativePath.test(imp)) new_imp = new_imp.replace(/ts$/, "js");
-    
+
       return match.replace(imp, new_imp);
     }
   );
