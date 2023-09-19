@@ -19,7 +19,7 @@ export class WatcherGenericProgram {
       (diagnostic) => {
         xwtscReportDiagnostics([diagnostic]);
         this.diagnostics++;
-      },
+      }
     );
 
     this.defaultCreateProgram = this.host.createProgram;
@@ -35,17 +35,15 @@ export class WatcherGenericProgram {
   host: ts.WatchCompilerHostOfConfigFile<ts.SemanticDiagnosticsBuilderProgram>;
 
   defaultCreateProgram: ts.CreateProgram<ts.SemanticDiagnosticsBuilderProgram>;
-  defaultAfterCreateProgram: (
-    program: ts.SemanticDiagnosticsBuilderProgram,
-  ) => void;
+  defaultAfterCreateProgram: (program: ts.SemanticDiagnosticsBuilderProgram) => void;
 
   init = (
     createHook: () => void = () => {},
     afterHook: (
       program: ts.SemanticDiagnosticsBuilderProgram,
       options: ts.CompilerOptions,
-      ctx: WatcherGenericProgram,
-    ) => void = () => {},
+      ctx: WatcherGenericProgram
+    ) => void = () => {}
   ) => {
     this.host.createProgram = (
       rootNammes,
@@ -53,7 +51,7 @@ export class WatcherGenericProgram {
       host,
       oldProgram,
       configFileParsingDiagnostics,
-      projectReferences,
+      projectReferences
     ) => {
       createHook();
       this.diagnostics = 0;
@@ -63,7 +61,7 @@ export class WatcherGenericProgram {
         host,
         oldProgram,
         configFileParsingDiagnostics,
-        projectReferences,
+        projectReferences
       );
     };
 

@@ -21,13 +21,13 @@ const commands = {
   build(argv: string[]) {
     buildCommand(argv);
   },
-  async bundle(argv: string[]) {
+  bundle(argv: string[]) {
     bundleCommand(argv, cwd);
   },
   check(argv: string[]) {
     checkCommand(argv);
   },
-  async init() {
+  init() {
     initActions(cwd);
   },
 };

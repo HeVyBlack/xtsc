@@ -19,16 +19,13 @@ export default function (argv: string[]) {
       optionsPath = path.resolve(optionsPath);
     }
 
-    new WatcherGenericProgram(optionsPath).init(
-      undefined,
-      (program, compilerOptions) => {
-        compilerOptions.noEmit = false;
-        compilerOptions.noEmitOnError = false;
-        program.emit(void 0, handleTscEmitFile(compilerOptions));
-        compilerOptions.noEmit = true;
-        compilerOptions.noEmitOnError = true;
-      }
-    );
+    new WatcherGenericProgram(optionsPath).init(undefined, (program, compilerOptions) => {
+      compilerOptions.noEmit = false;
+      compilerOptions.noEmitOnError = false;
+      program.emit(undefined, handleTscEmitFile(compilerOptions));
+      compilerOptions.noEmit = true;
+      compilerOptions.noEmitOnError = true;
+    });
   } else {
     let tsConfigPath: string | undefined;
     let options: ts.CompilerOptions;
